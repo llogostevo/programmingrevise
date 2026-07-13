@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, BookOpen, Bug, Check, ClipboardCheck, Code2, Eye, GraduationCap, Lightbulb, Quote, TriangleAlert } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Bug, Check, ChevronDown, ClipboardCheck, Code2, Eye, GraduationCap, Lightbulb, LockKeyhole, Quote, TriangleAlert } from "lucide-react";
 
 import type { CourseUnit, Lesson } from "@/types/course";
 import { availableLessons } from "@/data/curriculum";
@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { DualCodeBlock } from "@/components/course/dual-code-block";
 import { ExerciseRenderer } from "@/components/course/exercise-renderer";
 import { InlineProse } from "@/components/course/inline-prose";
-import { LESSON_STEPS, markStepComplete, setCurrentStep, type LessonStep } from "@/lib/progress";
+import { LESSON_STEPS, markStepComplete, setCurrentStep, setExpandedExamples, type LessonStep } from "@/lib/progress";
 import { useProgress } from "@/hooks/use-progress";
 import { cn } from "@/lib/utils";
 
@@ -37,40 +37,60 @@ type TipCard = {
   body: string;
   tone: "info" | "warning" | "exam";
   icon: typeof Lightbulb;
+  quiet?: boolean;
 };
+
+function shortenTip(text: string, maxChars = 180) {
+  const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((part) => part.trim()).filter(Boolean) ?? [text];
+  let result = sentences.slice(0, 2).join(" ");
+  if (result.length > maxChars) {
+    result = `${result.slice(0, maxChars - 1).trimEnd()}…`;
+  }
+  return result;
+}
 
 function tipsForStep(step: LessonStep, lesson: Lesson): TipCard[] {
   switch (step) {
     case "learn":
-      return [{ title: "Exam tip", body: lesson.examTip, tone: "info", icon: Lightbulb }];
+      return [{ title: "Exam tip", body: shortenTip(lesson.examTip), tone: "info", icon: Lightbulb, quiet: true }];
     case "example":
-      return [{ title: "Common mistake", body: lesson.commonMistake, tone: "warning", icon: TriangleAlert }];
+      return [{ title: "Common mistake", body: shortenTip(lesson.commonMistake), tone: "warning", icon: TriangleAlert }];
     case "trace":
-      return [{ title: "Trace tip", body: "Work one line at a time. Record each new value before you move on, and copy capital letters, spaces and punctuation exactly.", tone: "info", icon: Lightbulb }];
+      return [{ title: "Trace tip", body: "Work one line at a time. Record each new value before you move on.", tone: "info", icon: Lightbulb }];
     case "fix":
-      return [{ title: "Common mistake", body: lesson.commonMistake, tone: "warning", icon: TriangleAlert }];
+      return [{ title: "Common mistake", body: shortenTip(lesson.commonMistake), tone: "warning", icon: TriangleAlert }];
     case "complete":
-      return [{ title: "Pattern tip", body: "Match the surrounding syntax first, then fill only the missing piece. Re-read the expected output before you submit.", tone: "info", icon: Lightbulb }];
+      return [{ title: "Pattern tip", body: "Match the surrounding syntax first, then fill only the missing piece.", tone: "info", icon: Lightbulb }];
     case "write":
-      return [{ title: "Write tip", body: "Solve the visible example first, then check that your solution still works for the hidden tests.", tone: "info", icon: Lightbulb }];
+      return [{ title: "Write tip", body: "Run the example first, then check that hidden tests still pass.", tone: "info", icon: Lightbulb }];
     case "review":
       return [
-        { title: "Exam tip", body: lesson.examTip, tone: "info", icon: Lightbulb },
-        { title: "In the exam…", body: lesson.examCallout, tone: "exam", icon: GraduationCap },
+        { title: "Exam tip", body: shortenTip(lesson.examTip), tone: "info", icon: Lightbulb },
+        { title: "In the exam…", body: shortenTip(lesson.examCallout), tone: "exam", icon: GraduationCap },
       ];
   }
+}
+
+function stepIsLocked(step: LessonStep, completedSteps: LessonStep[], ordered: boolean) {
+  if (!ordered) return false;
+  const stepIndex = LESSON_STEPS.indexOf(step);
+  const frontier = LESSON_STEPS.findIndex((item) => !completedSteps.includes(item));
+  const maxReachable = frontier === -1 ? LESSON_STEPS.length - 1 : frontier;
+  return stepIndex > maxReachable;
 }
 
 function StepButton({
   step,
   active,
   complete,
+  locked,
   controls,
   onClick,
 }: {
   step: LessonStep;
   active: boolean;
   complete: boolean;
+  locked: boolean;
   controls: string;
   onClick: () => void;
 }) {
@@ -83,24 +103,34 @@ function StepButton({
       id={`lesson-step-${step}`}
       aria-selected={active}
       aria-controls={controls}
+      aria-disabled={locked || undefined}
       tabIndex={active ? 0 : -1}
+      disabled={locked}
       onClick={onClick}
       className={cn(
-        "group relative flex min-w-[5.25rem] flex-col items-center gap-1.5 rounded-xl px-2 py-2.5 text-xs font-semibold transition-colors",
-        active ? "bg-slate-900 text-white" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        "group relative flex min-w-[5.5rem] flex-col items-center gap-1.5 rounded-xl px-2 py-2.5 text-xs font-semibold transition-all",
+        active && "bg-slate-900 text-white shadow-md ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
+        !active && complete && "text-success hover:bg-success-soft/60",
+        !active && !complete && !locked && "text-muted-foreground hover:bg-muted hover:text-foreground",
+        locked && "cursor-not-allowed text-muted-foreground/40 opacity-55",
       )}
     >
       <span
         className={cn(
-          "grid size-7 place-items-center rounded-full border",
-          active ? "border-white/25 bg-white/10" : complete ? "border-emerald-500 bg-success-soft text-success" : "border-slate-300 bg-card",
+          "grid size-8 place-items-center rounded-full border",
+          active && "border-white/30 bg-white/15",
+          !active && complete && "border-emerald-500 bg-success-soft text-success",
+          !active && !complete && !locked && "border-slate-300 bg-card",
+          locked && "border-slate-200 bg-muted",
         )}
-        aria-hidden={!complete}
+        aria-hidden
       >
-        {complete ? <Check className="size-3.5" aria-hidden /> : <Icon className="size-3.5" aria-hidden />}
+        {locked ? <LockKeyhole className="size-3.5" /> : complete ? <Check className="size-3.5" /> : <Icon className="size-3.5" />}
       </span>
-      <span>{meta.label}</span>
-      {complete ? <span className="sr-only">Completed</span> : null}
+      <span className={cn(active && "text-[13px]")}>{meta.label}</span>
+      {active ? <span className="sr-only">Current step</span> : null}
+      {complete && !active ? <span className="sr-only">Completed</span> : null}
+      {locked ? <span className="sr-only">Locked</span> : null}
     </button>
   );
 }
@@ -161,23 +191,58 @@ function LearnStep({ lesson }: { lesson: Lesson }) {
   );
 }
 
-function ExampleStep({ lesson }: { lesson: Lesson }) {
+function ExampleStep({
+  lesson,
+  unitSlug,
+  expandedIds,
+}: {
+  lesson: Lesson;
+  unitSlug: string;
+  expandedIds: string[];
+}) {
+  function toggleExample(exampleId: string) {
+    const next = expandedIds.includes(exampleId)
+      ? expandedIds.filter((id) => id !== exampleId)
+      : [...expandedIds, exampleId];
+    setExpandedExamples(unitSlug, lesson.slug, next);
+  }
+
   return (
-    <div className="space-y-8">
-      {lesson.examples.map((example, index) => (
-        <article key={example.id} className="space-y-4">
-          <div className="flex items-start gap-3">
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary font-mono text-xs font-bold text-secondary-foreground">{index + 1}</span>
-            <div>
-              <h2 className="text-xl font-semibold">{example.title}</h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                <InlineProse text={example.context} />
-              </p>
+    <div className="space-y-5">
+      {lesson.examples.map((example, index) => {
+        const open = expandedIds.includes(example.id);
+        return (
+          <article key={example.id} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+            <div className={cn("px-5 py-4 sm:px-6 sm:py-5", open && "border-b bg-muted/40")}>
+              <div className="flex items-start gap-3">
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-slate-900 font-mono text-xs font-bold text-white">
+                  {index + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <h2 className="text-base font-semibold tracking-tight text-foreground">{example.title}</h2>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0"
+                      aria-expanded={open}
+                      onClick={() => toggleExample(example.id)}
+                    >
+                      {open ? "Hide code" : "Show code"}
+                      <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} />
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-base leading-7 text-foreground sm:text-lg">
+                    <InlineProse text={example.context} />
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-          <DualCodeBlock erl={example.erl} python={example.python} title={example.title} notes={example.notes} />
-        </article>
-      ))}
+            {open ? <DualCodeBlock erl={example.erl} python={example.python} notes={example.notes} embedded /> : null}
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -185,16 +250,16 @@ function ExampleStep({ lesson }: { lesson: Lesson }) {
 function TipCards({ tips }: { tips: TipCard[] }) {
   return (
     <>
-      {tips.map((tip) => {
+      {tips.map((tip, tipIndex) => {
         const Icon = tip.icon;
         if (tip.tone === "exam") {
           return (
-            <div key={tip.title} className="rounded-2xl bg-slate-900 p-5 text-white">
+            <div key={tip.title} className={cn("rounded-2xl bg-slate-900 p-4 text-white", tipIndex > 0 && "opacity-95")}>
               <div className="flex items-center gap-2 text-teal-300">
-                <Icon className="size-4" />
-                <p className="text-xs font-semibold uppercase tracking-wider">{tip.title}</p>
+                <Icon className="size-3.5" />
+                <p className="text-[11px] font-semibold uppercase tracking-wider">{tip.title}</p>
               </div>
-              <p className="mt-3 text-sm leading-6 text-slate-200">
+              <p className="mt-2 text-sm leading-6 text-slate-200">
                 <InlineProse text={tip.body} />
               </p>
             </div>
@@ -202,15 +267,15 @@ function TipCards({ tips }: { tips: TipCard[] }) {
         }
         const styles =
           tip.tone === "warning"
-            ? { wrap: "border-amber-200 bg-warning-soft", icon: "text-warning" }
-            : { wrap: "border-blue-200 bg-info-soft", icon: "text-info" };
+            ? { wrap: tip.quiet ? "border-amber-100 bg-warning-soft/50" : "border-amber-200 bg-warning-soft", icon: "text-warning" }
+            : { wrap: tip.quiet ? "border-blue-100 bg-info-soft/50" : "border-blue-200 bg-info-soft", icon: "text-info" };
         return (
-          <div key={tip.title} className={cn("rounded-2xl border p-5", styles.wrap)}>
+          <div key={tip.title} className={cn("rounded-2xl border p-4", styles.wrap, tip.quiet && "text-[0.95rem]")}>
             <div className={cn("flex items-center gap-2", styles.icon)}>
-              <Icon className="size-4" />
-              <p className="text-xs font-semibold uppercase tracking-wider">{tip.title}</p>
+              <Icon className="size-3.5" />
+              <p className="text-[11px] font-semibold uppercase tracking-wider">{tip.title}</p>
             </div>
-            <p className="mt-3 text-sm leading-6">
+            <p className={cn("mt-2 leading-6", tip.quiet ? "text-xs text-muted-foreground" : "text-sm")}>
               <InlineProse text={tip.body} />
             </p>
           </div>
@@ -244,6 +309,12 @@ export function LessonExperience({ unit, lesson }: { unit: CourseUnit; lesson: L
   }, [lessonProgress?.currentStep, lesson.slug, stepParam, unit.slug]);
 
   const completedSteps = lessonProgress?.completedSteps ?? [];
+  const expandedExampleIds =
+    lessonProgress?.expandedExamples && lessonProgress.expandedExamples.length > 0
+      ? lessonProgress.expandedExamples
+      : lesson.examples[0]
+        ? [lesson.examples[0].id]
+        : [];
   const index = LESSON_STEPS.indexOf(activeStep);
   const previousStep = index > 0 ? LESSON_STEPS[index - 1] : undefined;
   const nextStep = index < LESSON_STEPS.length - 1 ? LESSON_STEPS[index + 1] : undefined;
@@ -256,6 +327,7 @@ export function LessonExperience({ unit, lesson }: { unit: CourseUnit; lesson: L
   const sidebarTips = tipsForStep(activeStep, lesson);
 
   function selectStep(step: LessonStep) {
+    if (stepIsLocked(step, completedSteps, progress.settings.orderedLessons)) return;
     setActiveStep(step);
     setCurrentStep(unit.slug, lesson.slug, step);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -272,20 +344,22 @@ export function LessonExperience({ unit, lesson }: { unit: CourseUnit; lesson: L
   }
 
   function onTabKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    const currentIndex = LESSON_STEPS.indexOf(activeStep);
-    if (event.key === "ArrowRight" || event.key === "ArrowLeft" || event.key === "Home" || event.key === "End") {
-      event.preventDefault();
-      const nextIndex =
-        event.key === "Home"
-          ? 0
-          : event.key === "End"
-            ? LESSON_STEPS.length - 1
-            : event.key === "ArrowRight"
-              ? Math.min(currentIndex + 1, LESSON_STEPS.length - 1)
-              : Math.max(currentIndex - 1, 0);
-      selectStep(LESSON_STEPS[nextIndex]);
-      document.getElementById(`lesson-step-${LESSON_STEPS[nextIndex]}`)?.focus();
-    }
+    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft" && event.key !== "Home" && event.key !== "End") return;
+    event.preventDefault();
+    const reachable = LESSON_STEPS.filter((step) => !stepIsLocked(step, completedSteps, progress.settings.orderedLessons));
+    const currentReachable = Math.max(0, reachable.indexOf(activeStep));
+    const nextIndex =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? reachable.length - 1
+          : event.key === "ArrowRight"
+            ? Math.min(currentReachable + 1, reachable.length - 1)
+            : Math.max(currentReachable - 1, 0);
+    const target = reachable[nextIndex];
+    if (!target) return;
+    selectStep(target);
+    document.getElementById(`lesson-step-${target}`)?.focus();
   }
 
   const canAdvanceExercise = stageCorrect || completedSteps.includes(activeStep);
@@ -323,6 +397,7 @@ export function LessonExperience({ unit, lesson }: { unit: CourseUnit; lesson: L
                   step={step}
                   active={activeStep === step}
                   complete={completedSteps.includes(step)}
+                  locked={stepIsLocked(step, completedSteps, progress.settings.orderedLessons)}
                   controls={panelId}
                   onClick={() => selectStep(step)}
                 />
@@ -360,7 +435,7 @@ export function LessonExperience({ unit, lesson }: { unit: CourseUnit; lesson: L
               </div>
             ) : null}
             {activeStep === "learn" ? <LearnStep lesson={lesson} /> : null}
-            {activeStep === "example" ? <ExampleStep lesson={lesson} /> : null}
+            {activeStep === "example" ? <ExampleStep lesson={lesson} unitSlug={unit.slug} expandedIds={expandedExampleIds} /> : null}
             {activeStep === "review" ? (
               <div className="mb-6 rounded-2xl border border-violet-200 bg-violet-50 p-5 sm:p-6">
                 <p className="text-xs font-semibold uppercase tracking-wider text-violet-700">Quick recall</p>

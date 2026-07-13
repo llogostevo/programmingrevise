@@ -43,12 +43,20 @@ function parseNoteLines(label: string, language: CodeLanguage): number[] {
   return [];
 }
 
-function notesForLine(notes: LineNote[], lineNumber: number, language: CodeLanguage) {
-  return notes.filter((note) => parseNoteLines(note.line, language).includes(lineNumber));
-}
-
 function highlightedLines(notes: LineNote[], language: CodeLanguage) {
   return new Set(notes.flatMap((note) => parseNoteLines(note.line, language)));
+}
+
+function notesAnchoredAt(notes: LineNote[], lineNumber: number, language: CodeLanguage) {
+  return notes.filter((note) => {
+    const targets = parseNoteLines(note.line, language);
+    return targets[0] === lineNumber;
+  });
+}
+
+function teachingComment(language: CodeLanguage, explanation: string) {
+  const text = explanation.trim();
+  return language === "python" ? `# ${text}` : `// ${text}`;
 }
 
 function HighlightedLine({ code, language }: { code: string; language: CodeLanguage }) {
@@ -79,54 +87,40 @@ function AnnotatedCode({ code, language, notes }: { code: string; language: Code
   const detached = notes.filter((note) => parseNoteLines(note.line, language).length === 0);
 
   return (
-    <div className="overflow-x-auto font-mono text-[13px] leading-6 text-slate-100 sm:text-sm">
+    <div className="overflow-x-auto py-3 font-mono text-[13px] leading-6 text-slate-100 sm:text-sm">
       {lines.map((line, index) => {
         const lineNumber = index + 1;
-        const lineNotes = notesForLine(notes, lineNumber, language);
+        const lineNotes = notesAnchoredAt(notes, lineNumber, language);
         const active = highlighted.has(lineNumber);
+        const display =
+          lineNotes.length > 0
+            ? `${line}  ${lineNotes.map((note) => teachingComment(language, note.explanation)).join("  ")}`
+            : line;
         return (
           <div
             key={`${lineNumber}-${line}`}
             className={cn(
-              "grid grid-cols-[2.5rem_minmax(12rem,1fr)] border-l-2 sm:grid-cols-[2.5rem_minmax(14rem,1fr)_minmax(10rem,.9fr)]",
-              active ? "border-l-teal-300 bg-teal-400/10" : "border-l-transparent",
+              "grid grid-cols-[2.5rem_minmax(0,1fr)] border-l-2",
+              active ? "border-l-teal-300/70 bg-teal-400/5" : "border-l-transparent",
             )}
           >
-            <span className={cn("select-none py-1.5 pr-3 text-right", active ? "text-teal-200" : "text-slate-600")}>{lineNumber}</span>
-            <pre className="overflow-x-auto py-1.5 pr-4 whitespace-pre">
-              <HighlightedLine code={line} language={language} />
+            <span className={cn("select-none py-0.5 pr-3 text-right", active ? "text-teal-200/80" : "text-slate-600")}>{lineNumber}</span>
+            <pre className="overflow-x-auto py-0.5 pr-4 whitespace-pre">
+              <HighlightedLine code={display} language={language} />
             </pre>
-            <div className={cn("hidden border-l border-slate-800 px-3 py-1.5 text-[12px] leading-5 text-slate-300 sm:block", !lineNotes.length && "text-transparent")}>
-              {lineNotes.length ? (
-                <ul className="space-y-1.5 font-sans">
-                  {lineNotes.map((note) => (
-                    <li key={`${note.line}-${note.explanation}`}>{note.explanation}</li>
-                  ))}
-                </ul>
-              ) : (
-                "\u00a0"
-              )}
-            </div>
-            {lineNotes.length ? (
-              <div className="col-span-2 border-t border-slate-800/80 bg-slate-900/50 px-3 py-2 font-sans text-xs leading-5 text-slate-300 sm:hidden">
-                {lineNotes.map((note) => (
-                  <p key={`${note.line}-${note.explanation}`}>{note.explanation}</p>
-                ))}
-              </div>
-            ) : null}
           </div>
         );
       })}
-      {detached.length ? (
-        <div className="space-y-2 border-t border-slate-800 px-4 py-3 font-sans text-xs leading-5 text-slate-300">
-          {detached.map((note) => (
-            <p key={`${note.line}-${note.explanation}`}>
-              <span className="font-semibold text-teal-200">{note.line}: </span>
-              {note.explanation}
-            </p>
-          ))}
+      {detached.map((note) => (
+        <div key={`${note.line}-${note.explanation}`} className="grid grid-cols-[2.5rem_minmax(0,1fr)]">
+          <span className="select-none py-0.5 pr-3 text-right text-slate-700" aria-hidden>
+            ·
+          </span>
+          <pre className="overflow-x-auto py-0.5 pr-4 whitespace-pre">
+            <HighlightedLine code={teachingComment(language, `${note.line}: ${note.explanation}`)} language={language} />
+          </pre>
         </div>
-      ) : null}
+      ))}
     </div>
   );
 }
@@ -136,11 +130,14 @@ export function DualCodeBlock({
   python,
   title,
   notes,
+  embedded = false,
 }: {
   erl: string;
   python: string;
   title?: string;
   notes?: LineNote[];
+  /** Sit flush inside a parent card (no outer chrome). */
+  embedded?: boolean;
 }) {
   const progress = useProgress();
   const language = progress.settings.codeLanguage ?? "erl";
@@ -156,10 +153,15 @@ export function DualCodeBlock({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-700 bg-slate-950 shadow-sm">
+    <div
+      className={cn(
+        "overflow-hidden bg-slate-950",
+        embedded ? "rounded-none border-0 shadow-none" : "rounded-xl border border-slate-700 shadow-sm",
+      )}
+    >
       <div className="flex min-h-12 flex-wrap items-center justify-between gap-2 border-b border-slate-800 px-3 py-2">
         <div className="flex items-center gap-3">
-          {title ? <span className="hidden text-xs font-medium text-slate-400 sm:inline">{title}</span> : null}
+          {title && !embedded ? <span className="hidden text-xs font-medium text-slate-400 sm:inline">{title}</span> : null}
           <div className="flex rounded-lg bg-slate-900 p-1" role="tablist" aria-label="Code language">
             {(["erl", "python"] as const).map((item) => (
               <button

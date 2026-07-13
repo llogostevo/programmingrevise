@@ -28,6 +28,7 @@ const lessonProgressSchema = z.object({
   startedAt: z.string(),
   updatedAt: z.string(),
   completedAt: z.string().optional(),
+  expandedExamples: z.array(z.string()).optional(),
 });
 
 const reviewItemSchema = z.object({
@@ -174,6 +175,7 @@ export function markStepComplete(unitSlug: string, lessonSlug: string, step: Les
         startedAt: existing?.startedAt ?? time,
         updatedAt: time,
         completedAt: completedSteps.length === LESSON_STEPS.length ? existing?.completedAt ?? time : undefined,
+        expandedExamples: existing?.expandedExamples,
       },
     },
   });
@@ -194,6 +196,28 @@ export function setCurrentStep(unitSlug: string, lessonSlug: string, step: Lesso
         startedAt: existing?.startedAt ?? time,
         updatedAt: time,
         completedAt: existing?.completedAt,
+        expandedExamples: existing?.expandedExamples,
+      },
+    },
+  });
+}
+
+export function setExpandedExamples(unitSlug: string, lessonSlug: string, expandedExamples: string[]) {
+  ensureLoaded();
+  const key = lessonKey(unitSlug, lessonSlug);
+  const existing = snapshot.lessons[key];
+  const time = nowIso();
+  commit({
+    ...snapshot,
+    lessons: {
+      ...snapshot.lessons,
+      [key]: {
+        completedSteps: existing?.completedSteps ?? [],
+        currentStep: existing?.currentStep ?? "learn",
+        startedAt: existing?.startedAt ?? time,
+        updatedAt: time,
+        completedAt: existing?.completedAt,
+        expandedExamples,
       },
     },
   });

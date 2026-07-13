@@ -44,7 +44,7 @@ export function ReviewView() {
         </Badge>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Bring earlier ideas back at the right time</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Knowledge checks and failed write-code tasks return soon. Correct answers with no hints wait longer, then space out as your recall strengthens.
+          Short checks that protect what you have learned for the exam. Knowledge questions and failed write tasks return soon; confident answers wait longer.
         </p>
       </div>
       {due.length ? (
@@ -72,9 +72,9 @@ export function ReviewView() {
             <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-success-soft text-success">
               <CheckCircle2 className="size-6" />
             </span>
-            <h2 className="mt-4 text-xl font-semibold">You are up to date</h2>
+            <h2 className="mt-4 text-xl font-semibold">Nothing due — your memory queue is clear</h2>
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-              Complete lesson questions and write-code tasks to build your queue. We will bring them back when they are due.
+              Keep learning and these short checks will return later to protect your exam memory.
             </p>
             <Button asChild className="mt-5">
               <Link href="/course/">Choose a lesson</Link>

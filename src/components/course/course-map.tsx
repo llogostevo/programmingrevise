@@ -1,14 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
-  Brain,
   Check,
   ChevronRight,
   Circle,
   Clock3,
-  Code2,
   LockKeyhole,
   Map,
   Settings2,
@@ -17,7 +16,7 @@ import {
 import { curriculum, availableLessons } from "@/data/curriculum";
 import { useProgress } from "@/hooks/use-progress";
 import { getContinueHref, getNextLesson, getNextUnpassedTask, getTaskPassState, writeCodeTasks, type TaskPassState } from "@/lib/continue";
-import { setOrderedLessons } from "@/lib/progress";
+import { isReviewDue, setOrderedLessons } from "@/lib/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,98 +32,76 @@ const accents = {
   slate: "bg-slate-100 text-slate-700",
 };
 
-function TaskBadge({ label, state }: { label: "Knowledge" | "Application"; state: TaskPassState }) {
-  const Icon = label === "Knowledge" ? Brain : Code2;
+function TaskBadge({ label, state }: { label: "Guided write" | "Own write"; state: TaskPassState }) {
   if (state === "passed") {
     return (
       <Badge variant="success" className="gap-1">
-        <Icon className="size-3" />
+        <Check className="size-3" />
         {label}
       </Badge>
     );
   }
   if (state === "failed") {
-    return (
-      <Badge variant="warning" className="gap-1">
-        <Icon className="size-3" />
-        {label}
-      </Badge>
-    );
+    return <Badge variant="warning">{label}</Badge>;
   }
-  return (
-    <Badge variant="muted" className="gap-1">
-      <Icon className="size-3" />
-      {label}
-    </Badge>
-  );
+  return <Badge variant="muted">{label}</Badge>;
 }
 
 export function CourseMap() {
   const progress = useProgress();
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const completedCount = availableLessons.filter(({ unit, lesson }) => progress.lessons[`${unit.slug}/${lesson.slug}`]?.completedAt).length;
-  const secureKnowledge = Object.values(progress.topics).filter((topic) => topic.knowledge.level === "secure").length;
-  const secureApplication = Object.values(progress.topics).filter((topic) => topic.application.level === "secure").length;
   const next = getNextLesson(progress);
   const nextProgress = next ? progress.lessons[`${next.unit.slug}/${next.lesson.slug}`] : undefined;
   const continueHref = getContinueHref(progress);
   const nextTask = getNextUnpassedTask(progress);
+  const reviewDue = progress.reviewQueue.filter(isReviewDue).length;
 
   return (
     <div className="mx-auto max-w-[1250px] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Badge variant="info">
             <Map className="size-3" /> Learn
           </Badge>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Learn in small, connected steps</h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">Read OCR ERL, write Python and revisit key ideas as you move through J277 programming.</p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Your next step</h1>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+            {completedCount}/{availableLessons.length} lessons complete
+            {reviewDue > 0 ? ` · ${reviewDue} review${reviewDue === 1 ? "" : "s"} ready` : ""}
+          </p>
         </div>
-        <Card className="sm:w-80">
-          <CardContent className="pt-5 sm:pt-6">
-            <div className="flex justify-between text-xs font-medium text-muted-foreground">
-              <span>Available lessons</span>
-              <span>
-                {completedCount} / {availableLessons.length}
-              </span>
-            </div>
-            <Progress className="mt-2" value={(completedCount / availableLessons.length) * 100} />
-            <label className="mt-4 flex cursor-pointer items-center justify-between gap-3 border-t pt-4 text-sm">
-              <span>
-                <span className="flex items-center gap-2 font-medium">
-                  <Settings2 className="size-4" /> Complete in order
+        <div className="relative">
+          <Button type="button" variant="ghost" size="sm" onClick={() => setOptionsOpen((value) => !value)} aria-expanded={optionsOpen}>
+            <Settings2 className="size-4" /> Options
+          </Button>
+          {optionsOpen ? (
+            <div className="absolute right-0 z-20 mt-2 w-72 rounded-xl border bg-card p-4 shadow-lg">
+              <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
+                <span>
+                  <span className="flex items-center gap-2 font-medium">Complete in order</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">Turn off for free navigation</span>
                 </span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">Turn off for free navigation</span>
-              </span>
-              <input
-                type="checkbox"
-                className="peer sr-only"
-                checked={progress.settings.orderedLessons}
-                onChange={(event) => setOrderedLessons(event.target.checked)}
-              />
-              <span className="relative h-6 w-11 rounded-full bg-muted transition-colors after:absolute after:left-1 after:top-1 after:size-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-primary peer-checked:after:translate-x-5" />
-            </label>
-          </CardContent>
-        </Card>
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={progress.settings.orderedLessons}
+                  onChange={(event) => setOrderedLessons(event.target.checked)}
+                />
+                <span className="relative h-6 w-11 shrink-0 rounded-full bg-muted transition-colors after:absolute after:left-1 after:top-1 after:size-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-primary peer-checked:after:translate-x-5" />
+              </label>
+            </div>
+          ) : null}
+        </div>
       </div>
-
-      <p className="mt-6 rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground" role="status">
-        <span className="font-medium text-foreground">
-          {completedCount}/{availableLessons.length} lessons complete
-        </span>
-        <span className="mx-2 text-border">·</span>
-        <span>
-          {secureKnowledge} knowledge secure · {secureApplication} application secure
-        </span>
-      </p>
 
       {next ? (
         <Card className="mt-6 overflow-hidden">
-          <div className="code-grid border-b bg-slate-900 p-5 text-white sm:p-7">
+          <div className="code-grid border-b bg-slate-900 p-5 text-white sm:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <Badge className="bg-white/10 text-teal-200">Up next · Unit {next.unit.number}</Badge>
-                <h2 className="mt-4 text-2xl font-semibold sm:text-3xl">{next.lesson.title}</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{next.lesson.shortDescription}</p>
+                <h2 className="mt-4 text-2xl font-semibold sm:text-4xl">{next.lesson.title}</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">{next.lesson.shortDescription}</p>
               </div>
               <span className="font-mono text-xs text-slate-400">J277 {next.lesson.specReference}</span>
             </div>
@@ -156,7 +133,14 @@ export function CourseMap() {
         </Card>
       ) : null}
 
-      <div className="relative mt-10 space-y-5 before:absolute before:bottom-8 before:left-[1.45rem] before:top-8 before:w-px before:bg-border sm:before:left-[2.45rem]">
+      <div className="mt-10 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Full curriculum</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Guided write = supported task · Own write = on your own</p>
+        </div>
+      </div>
+
+      <div className="relative mt-5 space-y-5 before:absolute before:bottom-8 before:left-[1.45rem] before:top-8 before:w-px before:bg-border sm:before:left-[2.45rem]">
         {curriculum.map((unit) => {
           const available = unit.status === "available";
           return (
@@ -174,7 +158,7 @@ export function CourseMap() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-xl font-semibold sm:text-2xl">{unit.title}</h2>
+                        <h3 className="text-xl font-semibold sm:text-2xl">{unit.title}</h3>
                         <Badge variant="outline">{unit.specReference}</Badge>
                         {!available ? (
                           <Badge variant="muted">
@@ -203,8 +187,8 @@ export function CourseMap() {
                         const item = progress.lessons[`${unit.slug}/${lesson.slug}`];
                         const stepsDone = item?.completedSteps.length ?? 0;
                         const { guided, independent } = writeCodeTasks(lesson);
-                        const knowledgeState = getTaskPassState(progress, guided?.id);
-                        const applicationState = getTaskPassState(progress, independent?.id);
+                        const guidedState = getTaskPassState(progress, guided?.id);
+                        const ownState = getTaskPassState(progress, independent?.id);
                         const state = item?.completedAt ? "completed" : item ? "in progress" : locked ? "locked" : "available";
                         const Icon = state === "completed" ? Check : state === "locked" ? LockKeyhole : state === "in progress" ? Circle : ChevronRight;
                         const content = (
@@ -228,8 +212,8 @@ export function CourseMap() {
                               </span>
                             </span>
                             <span className="flex flex-wrap items-center justify-end gap-1.5">
-                              <TaskBadge label="Knowledge" state={knowledgeState} />
-                              <TaskBadge label="Application" state={applicationState} />
+                              <TaskBadge label="Guided write" state={guidedState} />
+                              <TaskBadge label="Own write" state={ownState} />
                             </span>
                           </>
                         );

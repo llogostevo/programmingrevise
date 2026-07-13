@@ -73,12 +73,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     ? "text-muted-foreground/55 hover:bg-muted hover:text-muted-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
+              title="Short checks that protect what you've learned for the exam"
             >
               <RefreshCcw className="size-4" />
               Review
               {reviewDue > 0 ? (
                 <span className="rounded-full bg-warning-soft px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-warning">{reviewDue}</span>
               ) : null}
+              <span className="hidden text-[10px] font-normal text-muted-foreground lg:inline">
+                {reviewDue > 0 ? "· protects exam memory" : "· queue clear"}
+              </span>
             </Link>
           </nav>
           <div className="ml-auto hidden items-center gap-2 sm:flex">
