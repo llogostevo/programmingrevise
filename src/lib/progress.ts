@@ -53,7 +53,7 @@ const progressSchema = z.object({
       orderedLessons: z.boolean(),
       codeLanguage: z.enum(["erl", "python"]).default("erl"),
     })
-    .default({ orderedLessons: false, codeLanguage: "erl" }),
+    .default({ orderedLessons: true, codeLanguage: "erl" }),
   updatedAt: z.string(),
 });
 
@@ -71,7 +71,7 @@ export function createEmptyProgress(): ProgressState {
     exercises: {},
     topics: {},
     reviewQueue: [],
-    settings: { orderedLessons: false, codeLanguage: "erl" },
+    settings: { orderedLessons: true, codeLanguage: "erl" },
     updatedAt: nowIso(),
   };
 }

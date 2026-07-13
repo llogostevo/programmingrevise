@@ -268,7 +268,7 @@ export function CourseMap() {
                 <span className="flex items-center gap-2 font-medium">
                   <Settings2 className="size-4" /> Complete in order
                 </span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">Default is free navigation</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">Turn off for free navigation</span>
               </span>
               <input
                 type="checkbox"
