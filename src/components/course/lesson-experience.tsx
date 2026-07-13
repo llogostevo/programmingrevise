@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, BookOpen, Bug, Check, ClipboardCheck, Code2, Eye, GraduationCap, Lightbulb, Quote, TriangleAlert } from "lucide-react";
 
 import type { CourseUnit, Lesson } from "@/types/course";
@@ -16,6 +17,10 @@ import { InlineProse } from "@/components/course/inline-prose";
 import { LESSON_STEPS, markStepComplete, setCurrentStep, type LessonStep } from "@/lib/progress";
 import { useProgress } from "@/hooks/use-progress";
 import { cn } from "@/lib/utils";
+
+function isLessonStep(value: string | null): value is LessonStep {
+  return Boolean(value && (LESSON_STEPS as readonly string[]).includes(value));
+}
 
 const stepMeta: Record<LessonStep, { label: string; eyebrow: string; description: string; icon: typeof BookOpen }> = {
   learn: { label: "Learn", eyebrow: "Build the idea", description: "Start with the concept and its key vocabulary.", icon: BookOpen },
@@ -107,7 +112,7 @@ function LearnStep({ lesson }: { lesson: Lesson }) {
         <Badge variant="info">Key idea</Badge>
         <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground sm:text-xl">{lesson.objective}</h2>
         <p className="mt-3 text-base leading-7 text-muted-foreground sm:text-lg">
-          <InlineProse text={lesson.explanation} />
+          <InlineProse text={lesson.explanation} glossary />
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 [&>:last-child:nth-child(odd)]:sm:col-span-2">
@@ -118,7 +123,7 @@ function LearnStep({ lesson }: { lesson: Lesson }) {
             </CardHeader>
             <CardContent>
               <p className="text-sm leading-6 text-muted-foreground">
-                <InlineProse text={item.definition} />
+                <InlineProse text={item.definition} glossary />
               </p>
             </CardContent>
           </Card>
@@ -131,7 +136,7 @@ function LearnStep({ lesson }: { lesson: Lesson }) {
             <li key={point} className="flex gap-3 text-sm leading-6">
               <Check className="mt-1 size-4 shrink-0 text-primary" />
               <span>
-                <InlineProse text={point} />
+                <InlineProse text={point} glossary />
               </span>
             </li>
           ))}
@@ -202,18 +207,26 @@ function TipCards({ tips }: { tips: TipCard[] }) {
 
 export function LessonExperience({ unit, lesson }: { unit: CourseUnit; lesson: Lesson }) {
   const progress = useProgress();
+  const searchParams = useSearchParams();
   const key = `${unit.slug}/${lesson.slug}`;
   const lessonProgress = progress.lessons[key];
-  const [activeStep, setActiveStep] = useState<LessonStep>("learn");
+  const stepParam = searchParams.get("step");
+  const [activeStep, setActiveStep] = useState<LessonStep>(() => (isLessonStep(stepParam) ? stepParam : "learn"));
   const restored = useRef(false);
   const panelId = useId();
 
   useEffect(() => {
+    if (isLessonStep(stepParam)) {
+      restored.current = true;
+      setActiveStep(stepParam);
+      setCurrentStep(unit.slug, lesson.slug, stepParam);
+      return;
+    }
     if (!restored.current && lessonProgress?.currentStep) {
       restored.current = true;
       setActiveStep(lessonProgress.currentStep);
     }
-  }, [lessonProgress?.currentStep]);
+  }, [lessonProgress?.currentStep, lesson.slug, stepParam, unit.slug]);
 
   const completedSteps = lessonProgress?.completedSteps ?? [];
   const index = LESSON_STEPS.indexOf(activeStep);

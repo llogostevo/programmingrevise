@@ -3,19 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, Braces, GraduationCap, LayoutDashboard, Menu, RefreshCcw, Search, X } from "lucide-react";
+import { BookOpen, GraduationCap, Menu, RefreshCcw, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ProgressMenu } from "@/components/progress/progress-menu";
+import { useProgress } from "@/hooks/use-progress";
+import { getContinueHref } from "@/lib/continue";
+import { isReviewDue } from "@/lib/progress";
 import { cn } from "@/lib/utils";
-
-const navigation = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/course", label: "Course", icon: BookOpen },
-  { href: "/practice", label: "Practice", icon: Braces },
-  { href: "/review", label: "Review", icon: RefreshCcw },
-  { href: "/progress", label: "Progress", icon: BarChart3 },
-  { href: "/glossary", label: "Glossary", icon: Search },
-];
 
 function Brand() {
   return (
@@ -27,24 +22,6 @@ function Brand() {
         <span className="block text-base font-bold leading-4 tracking-tight">Procedural</span>
         <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">OCR J277</span>
       </span>
-    </Link>
-  );
-}
-
-function NavLink({ href, label, icon: Icon, onClick }: (typeof navigation)[number] & { onClick?: () => void }) {
-  const pathname = usePathname();
-  const active = pathname === href || (href === "/course" && pathname.startsWith("/course/"));
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors xl:px-3",
-        active ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
-      )}
-    >
-      <Icon className="size-4 shrink-0" />
-      {label}
     </Link>
   );
 }
@@ -63,27 +40,59 @@ function SavedChip() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const progress = useProgress();
+  const continueHref = getContinueHref(progress);
+  const reviewDue = progress.reviewQueue.filter(isReviewDue).length;
+  const learnActive = pathname === "/course" || pathname.startsWith("/course/");
+  const reviewActive = pathname === "/review" || pathname.startsWith("/review/");
+
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-50 border-b bg-background/92 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
           <Brand />
-          <nav className="ml-auto hidden min-w-0 items-center gap-0.5 2xl:flex" aria-label="Primary navigation">
-            {navigation.map((item) => (
-              <NavLink key={item.href} {...item} />
-            ))}
+          <nav className="ml-6 hidden items-center gap-1 sm:flex" aria-label="Primary navigation">
+            <Link
+              href="/course/"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                learnActive ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <BookOpen className="size-4" />
+              Learn
+            </Link>
+            <Link
+              href="/review/"
+              className={cn(
+                "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                reviewActive
+                  ? "bg-secondary text-secondary-foreground"
+                  : reviewDue === 0
+                    ? "text-muted-foreground/55 hover:bg-muted hover:text-muted-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <RefreshCcw className="size-4" />
+              Review
+              {reviewDue > 0 ? (
+                <span className="rounded-full bg-warning-soft px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-warning">{reviewDue}</span>
+              ) : null}
+            </Link>
           </nav>
-          <div className="ml-auto hidden items-center gap-2 sm:flex 2xl:ml-0">
+          <div className="ml-auto hidden items-center gap-2 sm:flex">
             <SavedChip />
+            <ProgressMenu />
             <Button asChild size="sm" className="shrink-0">
-              <Link href="/dashboard">Continue learning</Link>
+              <Link href={continueHref}>Continue learning</Link>
             </Button>
           </div>
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="shrink-0 2xl:hidden"
+            className="ml-auto shrink-0 sm:hidden"
             onClick={() => setOpen((value) => !value)}
             aria-label={open ? "Close navigation" : "Open navigation"}
             aria-expanded={open}
@@ -92,17 +101,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Button>
         </div>
         {open ? (
-          <div className="border-t bg-card p-4 2xl:hidden">
+          <div className="border-t bg-card p-4 sm:hidden">
             <nav className="grid gap-1" aria-label="Mobile navigation">
-              {navigation.map((item) => (
-                <NavLink key={item.href} {...item} onClick={() => setOpen(false)} />
-              ))}
+              <Link
+                href="/course/"
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
+                  learnActive ? "bg-secondary text-secondary-foreground" : "text-muted-foreground",
+                )}
+              >
+                <BookOpen className="size-4" /> Learn
+              </Link>
+              <Link
+                href="/review/"
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
+                  reviewActive ? "bg-secondary text-secondary-foreground" : reviewDue === 0 ? "text-muted-foreground/55" : "text-muted-foreground",
+                )}
+              >
+                <RefreshCcw className="size-4" /> Review
+                {reviewDue > 0 ? (
+                  <span className="rounded-full bg-warning-soft px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-warning">{reviewDue}</span>
+                ) : null}
+              </Link>
             </nav>
             <div className="mt-3 flex items-center justify-between gap-3">
               <SavedChip />
+              <ProgressMenu />
             </div>
             <Button asChild className="mt-3 w-full">
-              <Link href="/dashboard" onClick={() => setOpen(false)}>
+              <Link href={continueHref} onClick={() => setOpen(false)}>
                 Continue learning
               </Link>
             </Button>
@@ -113,7 +143,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <footer className="mt-16 border-t bg-card/60">
         <div className="mx-auto flex max-w-[1500px] flex-col gap-3 px-4 py-8 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p>Procedural · OCR J277 programming practice</p>
-          <p>Progress stays in this browser unless you export it.</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Link href="/glossary/" className="hover:text-foreground">
+              Glossary
+            </Link>
+            <p>Progress stays in this browser unless you export it.</p>
+          </div>
         </div>
       </footer>
     </div>
