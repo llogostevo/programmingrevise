@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import Prism from "prismjs";
 import "prismjs/components/prism-python";
 
 import type { CodeLanguage } from "@/types/course";
 import { Button } from "@/components/ui/button";
+import { setCodeLanguage } from "@/lib/progress";
+import { useProgress } from "@/hooks/use-progress";
 import { cn } from "@/lib/utils";
 
 Prism.languages.erl = {
@@ -22,6 +24,50 @@ Prism.languages.erl = {
   punctuation: /[{}\[\];(),.:]/,
 };
 
+type LineNote = { line: string; explanation: string };
+
+function parseNoteLines(label: string, language: CodeLanguage): number[] {
+  const bilingual = label.match(/^(\d+)\s*\/\s*(\d+)$/);
+  if (bilingual) return [Number(language === "erl" ? bilingual[1] : bilingual[2])];
+
+  const range = label.match(/^(\d+)\s*[–-]\s*(\d+)$/);
+  if (range) {
+    const start = Number(range[1]);
+    const end = Number(range[2]);
+    if (end >= start) return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+  }
+
+  const single = label.match(/^(\d+)$/);
+  if (single) return [Number(single[1])];
+
+  return [];
+}
+
+function highlightedLines(notes: LineNote[], language: CodeLanguage) {
+  return new Set(notes.flatMap((note) => parseNoteLines(note.line, language)));
+}
+
+function notesAnchoredAt(notes: LineNote[], lineNumber: number, language: CodeLanguage) {
+  return notes.filter((note) => {
+    const targets = parseNoteLines(note.line, language);
+    return targets[0] === lineNumber;
+  });
+}
+
+function teachingComment(language: CodeLanguage, explanation: string) {
+  const text = explanation.trim();
+  return language === "python" ? `# ${text}` : `// ${text}`;
+}
+
+function HighlightedLine({ code, language }: { code: string; language: CodeLanguage }) {
+  const html = useMemo(() => {
+    const grammar = language === "erl" ? Prism.languages.erl : Prism.languages.python;
+    return Prism.highlight(code || " ", grammar, language);
+  }, [code, language]);
+
+  return <code className={language === "erl" ? "erl-code" : "python-code"} dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
 function HighlightedCode({ code, language }: { code: string; language: CodeLanguage }) {
   const html = useMemo(() => {
     const grammar = language === "erl" ? Prism.languages.erl : Prism.languages.python;
@@ -35,10 +81,70 @@ function HighlightedCode({ code, language }: { code: string; language: CodeLangu
   );
 }
 
-export function DualCodeBlock({ erl, python, title }: { erl: string; python: string; title?: string }) {
-  const [language, setLanguage] = useState<CodeLanguage>("erl");
+function AnnotatedCode({ code, language, notes }: { code: string; language: CodeLanguage; notes: LineNote[] }) {
+  const lines = code.split("\n");
+  const highlighted = highlightedLines(notes, language);
+  const detached = notes.filter((note) => parseNoteLines(note.line, language).length === 0);
+
+  return (
+    <div className="overflow-x-auto py-3 font-mono text-[13px] leading-6 text-slate-100 sm:text-sm">
+      {lines.map((line, index) => {
+        const lineNumber = index + 1;
+        const lineNotes = notesAnchoredAt(notes, lineNumber, language);
+        const active = highlighted.has(lineNumber);
+        const display =
+          lineNotes.length > 0
+            ? `${line}  ${lineNotes.map((note) => teachingComment(language, note.explanation)).join("  ")}`
+            : line;
+        return (
+          <div
+            key={`${lineNumber}-${line}`}
+            className={cn(
+              "grid grid-cols-[2.5rem_minmax(0,1fr)] border-l-2",
+              active ? "border-l-teal-300/70 bg-teal-400/5" : "border-l-transparent",
+            )}
+          >
+            <span className={cn("select-none py-0.5 pr-3 text-right", active ? "text-teal-200/80" : "text-slate-600")}>{lineNumber}</span>
+            <pre className="overflow-x-auto py-0.5 pr-4 whitespace-pre">
+              <HighlightedLine code={display} language={language} />
+            </pre>
+          </div>
+        );
+      })}
+      {detached.map((note) => (
+        <div key={`${note.line}-${note.explanation}`} className="grid grid-cols-[2.5rem_minmax(0,1fr)]">
+          <span className="select-none py-0.5 pr-3 text-right text-slate-700" aria-hidden>
+            ·
+          </span>
+          <pre className="overflow-x-auto py-0.5 pr-4 whitespace-pre">
+            <HighlightedLine code={teachingComment(language, `${note.line}: ${note.explanation}`)} language={language} />
+          </pre>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function DualCodeBlock({
+  erl,
+  python,
+  title,
+  notes,
+  embedded = false,
+}: {
+  erl: string;
+  python: string;
+  title?: string;
+  notes?: LineNote[];
+  /** Sit flush inside a parent card (no outer chrome). */
+  embedded?: boolean;
+}) {
+  const progress = useProgress();
+  const language = progress.settings.codeLanguage ?? "erl";
   const [copied, setCopied] = useState(false);
   const code = language === "erl" ? erl : python;
+  const reactId = useId();
+  const panelId = `${reactId}-panel`;
 
   async function copy() {
     await navigator.clipboard.writeText(code);
@@ -47,19 +153,30 @@ export function DualCodeBlock({ erl, python, title }: { erl: string; python: str
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-700 bg-slate-950 shadow-sm">
+    <div
+      className={cn(
+        "overflow-hidden bg-slate-950",
+        embedded ? "rounded-none border-0 shadow-none" : "rounded-xl border border-slate-700 shadow-sm",
+      )}
+    >
       <div className="flex min-h-12 flex-wrap items-center justify-between gap-2 border-b border-slate-800 px-3 py-2">
         <div className="flex items-center gap-3">
-          {title ? <span className="hidden text-xs font-medium text-slate-400 sm:inline">{title}</span> : null}
+          {title && !embedded ? <span className="hidden text-xs font-medium text-slate-400 sm:inline">{title}</span> : null}
           <div className="flex rounded-lg bg-slate-900 p-1" role="tablist" aria-label="Code language">
             {(["erl", "python"] as const).map((item) => (
               <button
                 key={item}
                 type="button"
                 role="tab"
+                id={`${reactId}-${item}`}
                 aria-selected={language === item}
-                onClick={() => setLanguage(item)}
-                className={cn("rounded-md px-3 py-1.5 text-xs font-semibold transition-colors", language === item ? "bg-white text-slate-950" : "text-slate-400 hover:text-white")}
+                aria-controls={panelId}
+                tabIndex={language === item ? 0 : -1}
+                onClick={() => setCodeLanguage(item)}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                  language === item ? "bg-white text-slate-950" : "text-slate-400 hover:text-white",
+                )}
               >
                 {item === "erl" ? "OCR ERL" : "Python"}
               </button>
@@ -70,7 +187,9 @@ export function DualCodeBlock({ erl, python, title }: { erl: string; python: str
           {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Copy"}
         </Button>
       </div>
-      <HighlightedCode code={code} language={language} />
+      <div id={panelId} role="tabpanel" aria-labelledby={`${reactId}-${language}`}>
+        {notes?.length ? <AnnotatedCode code={code} language={language} notes={notes} /> : <HighlightedCode code={code} language={language} />}
+      </div>
     </div>
   );
 }

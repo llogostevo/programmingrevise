@@ -1,5 +1,12 @@
-import type { Metadata } from "next";
-import { ProgressView } from "@/components/progress/progress-view";
+"use client";
 
-export const metadata: Metadata = { title: "Progress" };
-export default function ProgressPage() { return <main><ProgressView /></main>; }
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export default function ProgressRedirectPage() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/course/");
+  }, [router]);
+  return <main className="mx-auto max-w-[1200px] px-4 py-16 text-sm text-muted-foreground">Redirecting to Learn…</main>;
+}

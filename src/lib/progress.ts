@@ -28,6 +28,7 @@ const lessonProgressSchema = z.object({
   startedAt: z.string(),
   updatedAt: z.string(),
   completedAt: z.string().optional(),
+  expandedExamples: z.array(z.string()).optional(),
 });
 
 const reviewItemSchema = z.object({
@@ -48,7 +49,12 @@ const progressSchema = z.object({
     z.object({ knowledge: masterySchema, application: masterySchema }),
   ),
   reviewQueue: z.array(reviewItemSchema),
-  settings: z.object({ orderedLessons: z.boolean() }),
+  settings: z
+    .object({
+      orderedLessons: z.boolean(),
+      codeLanguage: z.enum(["erl", "python"]).default("erl"),
+    })
+    .default({ orderedLessons: true, codeLanguage: "erl" }),
   updatedAt: z.string(),
 });
 
@@ -66,7 +72,7 @@ export function createEmptyProgress(): ProgressState {
     exercises: {},
     topics: {},
     reviewQueue: [],
-    settings: { orderedLessons: false },
+    settings: { orderedLessons: true, codeLanguage: "erl" },
     updatedAt: nowIso(),
   };
 }
@@ -169,6 +175,7 @@ export function markStepComplete(unitSlug: string, lessonSlug: string, step: Les
         startedAt: existing?.startedAt ?? time,
         updatedAt: time,
         completedAt: completedSteps.length === LESSON_STEPS.length ? existing?.completedAt ?? time : undefined,
+        expandedExamples: existing?.expandedExamples,
       },
     },
   });
@@ -189,6 +196,28 @@ export function setCurrentStep(unitSlug: string, lessonSlug: string, step: Lesso
         startedAt: existing?.startedAt ?? time,
         updatedAt: time,
         completedAt: existing?.completedAt,
+        expandedExamples: existing?.expandedExamples,
+      },
+    },
+  });
+}
+
+export function setExpandedExamples(unitSlug: string, lessonSlug: string, expandedExamples: string[]) {
+  ensureLoaded();
+  const key = lessonKey(unitSlug, lessonSlug);
+  const existing = snapshot.lessons[key];
+  const time = nowIso();
+  commit({
+    ...snapshot,
+    lessons: {
+      ...snapshot.lessons,
+      [key]: {
+        completedSteps: existing?.completedSteps ?? [],
+        currentStep: existing?.currentStep ?? "learn",
+        startedAt: existing?.startedAt ?? time,
+        updatedAt: time,
+        completedAt: existing?.completedAt,
+        expandedExamples,
       },
     },
   });
@@ -224,11 +253,15 @@ export function recordExerciseResult(result: ExerciseResult) {
   const currentQueue = snapshot.reviewQueue.filter((item) => item.exerciseId !== result.exerciseId);
   const oldQueueItem = snapshot.reviewQueue.find((item) => item.exerciseId === result.exerciseId);
   const correctStreak = result.correct ? (oldQueueItem?.correctStreak ?? 0) + 1 : 0;
+  const isWriteCode = result.exerciseId.endsWith("-guided") || result.exerciseId.endsWith("-independent");
+  // Failed write-code tasks return immediately alongside knowledge review items.
   const intervalDays = result.correct
     ? result.hintsUsed > 0
       ? 1
       : Math.min(30, Math.max(3, (oldQueueItem?.intervalDays ?? 1) * 2))
-    : 1 / 144;
+    : isWriteCode
+      ? 0
+      : 1 / 144;
   const dueAt = new Date(Date.now() + intervalDays * 86_400_000).toISOString();
 
   commit({
@@ -254,7 +287,7 @@ export function recordExerciseResult(result: ExerciseResult) {
     },
     reviewQueue: [
       ...currentQueue,
-      { exerciseId: result.exerciseId, unitSlug: result.unitSlug, lessonSlug: result.lessonSlug, dueAt, intervalDays, correctStreak },
+      { exerciseId: result.exerciseId, unitSlug: result.unitSlug, lessonSlug: result.lessonSlug, dueAt, intervalDays: Math.max(intervalDays, 1 / 144), correctStreak },
     ],
   });
 }
@@ -262,6 +295,11 @@ export function recordExerciseResult(result: ExerciseResult) {
 export function setOrderedLessons(value: boolean) {
   ensureLoaded();
   commit({ ...snapshot, settings: { ...snapshot.settings, orderedLessons: value } });
+}
+
+export function setCodeLanguage(value: "erl" | "python") {
+  ensureLoaded();
+  commit({ ...snapshot, settings: { ...snapshot.settings, codeLanguage: value } });
 }
 
 export function exportProgress() {
