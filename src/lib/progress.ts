@@ -229,11 +229,15 @@ export function recordExerciseResult(result: ExerciseResult) {
   const currentQueue = snapshot.reviewQueue.filter((item) => item.exerciseId !== result.exerciseId);
   const oldQueueItem = snapshot.reviewQueue.find((item) => item.exerciseId === result.exerciseId);
   const correctStreak = result.correct ? (oldQueueItem?.correctStreak ?? 0) + 1 : 0;
+  const isWriteCode = result.exerciseId.endsWith("-guided") || result.exerciseId.endsWith("-independent");
+  // Failed write-code tasks return immediately alongside knowledge review items.
   const intervalDays = result.correct
     ? result.hintsUsed > 0
       ? 1
       : Math.min(30, Math.max(3, (oldQueueItem?.intervalDays ?? 1) * 2))
-    : 1 / 144;
+    : isWriteCode
+      ? 0
+      : 1 / 144;
   const dueAt = new Date(Date.now() + intervalDays * 86_400_000).toISOString();
 
   commit({
@@ -259,7 +263,7 @@ export function recordExerciseResult(result: ExerciseResult) {
     },
     reviewQueue: [
       ...currentQueue,
-      { exerciseId: result.exerciseId, unitSlug: result.unitSlug, lessonSlug: result.lessonSlug, dueAt, intervalDays, correctStreak },
+      { exerciseId: result.exerciseId, unitSlug: result.unitSlug, lessonSlug: result.lessonSlug, dueAt, intervalDays: Math.max(intervalDays, 1 / 144), correctStreak },
     ],
   });
 }

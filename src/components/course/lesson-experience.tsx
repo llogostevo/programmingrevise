@@ -108,27 +108,42 @@ function StepButton({
 function LearnStep({ lesson }: { lesson: Lesson }) {
   return (
     <div className="space-y-6">
-      <div>
-        <Badge variant="info">Key idea</Badge>
-        <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground sm:text-xl">{lesson.objective}</h2>
-        <p className="mt-3 text-base leading-7 text-muted-foreground sm:text-lg">
+      <section
+        aria-labelledby="key-idea-heading"
+        className="rounded-2xl border border-primary/20 bg-gradient-to-br from-secondary/70 via-card to-card p-5 shadow-sm sm:p-7"
+      >
+        <div className="flex items-center gap-2 text-primary">
+          <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+            <Lightbulb className="size-4" aria-hidden />
+          </span>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em]">Key idea</p>
+        </div>
+        <h2 id="key-idea-heading" className="mt-4 max-w-3xl text-xl font-semibold tracking-tight text-foreground sm:text-2xl sm:leading-snug">
+          {lesson.objective}
+        </h2>
+        <p className="mt-4 max-w-3xl border-t border-primary/15 pt-4 text-base leading-7 text-muted-foreground">
           <InlineProse text={lesson.explanation} glossary />
         </p>
+      </section>
+
+      <div>
+        <h3 className="text-sm font-semibold text-foreground">Definitions</h3>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 [&>:last-child:nth-child(odd)]:sm:col-span-2">
+          {lesson.vocabulary.map((item) => (
+            <Card key={item.term} className="bg-muted/40 shadow-none">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{item.term}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  <InlineProse text={item.definition} glossary />
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 [&>:last-child:nth-child(odd)]:sm:col-span-2">
-        {lesson.vocabulary.map((item) => (
-          <Card key={item.term} className="bg-muted/40 shadow-none">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">{item.term}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm leading-6 text-muted-foreground">
-                <InlineProse text={item.definition} glossary />
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+
       <div className="rounded-2xl border bg-card p-5 sm:p-6">
         <h3 className="font-semibold">Keep these in mind</h3>
         <ul className="mt-4 space-y-3">
@@ -333,15 +348,17 @@ export function LessonExperience({ unit, lesson }: { unit: CourseUnit; lesson: L
             aria-labelledby={`lesson-step-${activeStep}`}
             className="min-w-0"
           >
-            <div className="mb-5 flex items-center gap-3">
-              <span className="grid size-10 place-items-center rounded-xl bg-slate-900 text-white">
-                <MetaIcon className="size-5" />
-              </span>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">{stepMeta[activeStep].eyebrow}</p>
-                <p className="text-sm text-muted-foreground">{stepMeta[activeStep].description}</p>
+            {activeStep !== "learn" ? (
+              <div className="mb-5 flex items-center gap-3">
+                <span className="grid size-10 place-items-center rounded-xl bg-slate-900 text-white">
+                  <MetaIcon className="size-5" />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-primary">{stepMeta[activeStep].eyebrow}</p>
+                  <p className="text-sm text-muted-foreground">{stepMeta[activeStep].description}</p>
+                </div>
               </div>
-            </div>
+            ) : null}
             {activeStep === "learn" ? <LearnStep lesson={lesson} /> : null}
             {activeStep === "example" ? <ExampleStep lesson={lesson} /> : null}
             {activeStep === "review" ? (
