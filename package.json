@@ -1,0 +1,40 @@
+{
+  "name": "procedural",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "npm run copy:pyodide && next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "copy:pyodide": "node scripts/copy-pyodide.mjs"
+  },
+  "dependencies": {
+    "@codemirror/lang-python": "latest",
+    "@uiw/react-codemirror": "latest",
+    "class-variance-authority": "latest",
+    "clsx": "latest",
+    "lucide-react": "latest",
+    "next": "latest",
+    "prismjs": "latest",
+    "pyodide": "latest",
+    "radix-ui": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "tailwind-merge": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "latest",
+    "@types/node": "latest",
+    "@types/prismjs": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "tailwindcss": "latest",
+    "tw-animate-css": "latest",
+    "typescript": "latest"
+  }
+}
