@@ -48,7 +48,12 @@ const progressSchema = z.object({
     z.object({ knowledge: masterySchema, application: masterySchema }),
   ),
   reviewQueue: z.array(reviewItemSchema),
-  settings: z.object({ orderedLessons: z.boolean() }),
+  settings: z
+    .object({
+      orderedLessons: z.boolean(),
+      codeLanguage: z.enum(["erl", "python"]).default("erl"),
+    })
+    .default({ orderedLessons: false, codeLanguage: "erl" }),
   updatedAt: z.string(),
 });
 
@@ -66,7 +71,7 @@ export function createEmptyProgress(): ProgressState {
     exercises: {},
     topics: {},
     reviewQueue: [],
-    settings: { orderedLessons: false },
+    settings: { orderedLessons: false, codeLanguage: "erl" },
     updatedAt: nowIso(),
   };
 }
@@ -262,6 +267,11 @@ export function recordExerciseResult(result: ExerciseResult) {
 export function setOrderedLessons(value: boolean) {
   ensureLoaded();
   commit({ ...snapshot, settings: { ...snapshot.settings, orderedLessons: value } });
+}
+
+export function setCodeLanguage(value: "erl" | "python") {
+  ensureLoaded();
+  commit({ ...snapshot, settings: { ...snapshot.settings, codeLanguage: value } });
 }
 
 export function exportProgress() {
