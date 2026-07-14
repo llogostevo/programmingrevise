@@ -86,6 +86,7 @@ export const arithmeticUnit: CourseUnit = {
         instructions: "Complete the expression so total stores the price multiplied by the quantity.",
         codeParts: ["price = 4\nquantity = 3\ntotal = price ", " quantity\nprint(total)"],
         answers: [["*"]],
+        feedback: "`*` is the multiplication operator. Here it calculates price × quantity and stores the product in total.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -204,6 +205,7 @@ export const arithmeticUnit: CourseUnit = {
         instructions: "Complete the expression so remainder stores what is left after division by 2.",
         codeParts: ["number = 17\nremainder = number ", " 2\nprint(remainder)"],
         answers: [["MOD"]],
+        feedback: "MOD (Python `%`) returns the remainder after whole-number division — what is left over when dividing by 2.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -319,6 +321,7 @@ export const arithmeticUnit: CourseUnit = {
         instructions: "Complete the ERL expression so area stores side squared.",
         codeParts: ["side = 6\narea = side ", " 2\nprint(area)"],
         answers: [["^"]],
+        feedback: "In OCR ERL, `^` raises a value to a power. Here side ^ 2 means side squared.",
       },
       guided: {
         title: "Scaffolded practice",

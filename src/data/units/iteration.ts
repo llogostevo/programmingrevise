@@ -74,6 +74,7 @@ export const iterationUnit: CourseUnit = {
         instructions: "Complete the closing line of this OCR ERL for loop.",
         codeParts: ['for i=0 to 4\n    print("Practise")\n', ""],
         answers: [["next i"]],
+        feedback: "OCR ERL closes a count-controlled loop with `next` plus the loop variable name.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -177,6 +178,7 @@ export const iterationUnit: CourseUnit = {
         instructions: "Complete the ERL loop so it counts down by one.",
         codeParts: ["for count=5 to 1 ", "\n    print(count)\nnext count"],
         answers: [["step -1"]],
+        feedback: "`step -1` makes the loop count downwards by one on each pass.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -281,6 +283,7 @@ export const iterationUnit: CourseUnit = {
         instructions: "Complete the OCR ERL keyword that closes this while loop.",
         codeParts: ["number = 1\nwhile number <= 3\n    print(number)\n    number = number + 1\n", ""],
         answers: [["endwhile"]],
+        feedback: "`endwhile` closes an OCR ERL while loop.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -384,6 +387,7 @@ export const iterationUnit: CourseUnit = {
         instructions: "Complete the post-test stopping line.",
         codeParts: ['do\n    answer = input("Answer: ")\n', ""],
         answers: [['until answer == "Correct"']],
+        feedback: "`until` marks a post-test loop — the condition is checked after the body, so the body always runs at least once.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -489,6 +493,7 @@ export const iterationUnit: CourseUnit = {
         instructions: "Complete the accumulator update so the new score is added to the existing total.",
         codeParts: ["total = 0\nfor i=1 to 3\n    score = int(input())\n    ", "\nnext i\nprint(total)"],
         answers: [["total = total + score"]],
+        feedback: "An accumulator update must use the old total: total = total + score adds the new score into the running total.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -618,6 +623,7 @@ export const iterationUnit: CourseUnit = {
         instructions: "Complete the first closing line for the inner loop.",
         codeParts: ['for row=0 to 1\n    for column=0 to 2\n        print(column)\n    ', "\nnext row"],
         answers: [["next column"]],
+        feedback: "Nested loops close from the inside out: `next column` finishes the inner loop before `next row`.",
       },
       guided: {
         title: "Scaffolded practice",

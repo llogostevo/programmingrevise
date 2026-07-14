@@ -70,6 +70,7 @@ export const outputUnit: CourseUnit = {
         instructions: "Complete the line so it displays: Level complete",
         codeParts: ["print(", ")"],
         answers: [['"Level complete"', "'Level complete'"]],
+        feedback: "Quotation marks mark a string of text. print displays those exact characters to the user.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -146,6 +147,7 @@ export const outputUnit: CourseUnit = {
         instructions: "Complete the line so it prints the integer 56, not a string.",
         codeParts: ["print(", ")"],
         answers: [["56"]],
+        feedback: "Whole numbers for numeric output are written without quotation marks so the program treats them as integers, not text.",
       },
       guided: {
         title: "Scaffolded practice",

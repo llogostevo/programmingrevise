@@ -75,6 +75,7 @@ export const robustProgramsUnit: CourseUnit = {
         instructions: "Complete the Boolean operator so both credentials must match.",
         codeParts: ['if username == storedUser ', ' password == storedPass then\n    print("Access granted")\nelse\n    print("Access denied")\nendif'],
         answers: [["AND"]],
+        feedback: "AND requires both conditions to be true — username and password must both match.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -184,6 +185,7 @@ export const robustProgramsUnit: CourseUnit = {
         instructions: "Complete the operator that joins the two ways a value can be outside the range.",
         codeParts: ["while number < 1 ", " number > 10\n    number = int(input(\"Try again: \"))\nendwhile"],
         answers: [["OR"]],
+        feedback: "OR is true if either comparison is true — useful for catching values below the minimum or above the maximum.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -291,6 +293,7 @@ export const robustProgramsUnit: CourseUnit = {
         instructions: "Complete the property used to count the characters in an ERL string.",
         codeParts: ["while password", " < 8\n    password = input(\"Too short: \")\nendwhile"],
         answers: [[".length"]],
+        feedback: "In OCR ERL, `.length` is the property that counts characters in a string.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -395,6 +398,7 @@ export const robustProgramsUnit: CourseUnit = {
         instructions: "Complete the missing upper-bound comparison so values from 10 to 20 inclusive are accepted.",
         codeParts: ["if total >= 10 ", " then\n    print(\"In range\")\nendif"],
         answers: [["AND total <= 20"]],
+        feedback: "Inclusive range checks use AND with both a lower and upper comparison, here allowing totals up to 20.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -504,6 +508,7 @@ export const robustProgramsUnit: CourseUnit = {
         instructions: "Complete both inclusive operators so 1 and 100 are accepted boundary values.",
         codeParts: ["if number ", " 1 AND number ", " 100 then\n    print(\"Accept\")\nendif"],
         answers: [[">="], ["<="]],
+        feedback: "Inclusive boundaries use >= and <= so the exact edge values are accepted.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -620,6 +625,7 @@ export const robustProgramsUnit: CourseUnit = {
         instructions: "Complete the ERL method that writes one line of data to the open file.",
         codeParts: ["myFile = open(filename)\nmyFile.", "(data)\nmyFile.close()"],
         answers: [["writeLine"]],
+        feedback: "ERL `writeLine` writes one line of data to the open file.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -723,6 +729,7 @@ export const robustProgramsUnit: CourseUnit = {
         instructions: "Complete the ERL function call that generates a possible dice value from 1 to 6 inclusive.",
         codeParts: ["dice = ", "\nprint(dice)"],
         answers: [["random(1, 6)", "random(1,6)"]],
+        feedback: "ERL `random(1, 6)` returns an inclusive integer between 1 and 6.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -830,6 +837,7 @@ export const robustProgramsUnit: CourseUnit = {
         instructions: "Complete the line that calls the function and stores its returned result.",
         codeParts: ["function double(number)\n    return number * 2\nendfunction\n\n", "\nprint(result)"],
         answers: [["result = double(6)"]],
+        feedback: "Calling a function and assigning its return value (result = double(6)) stores the computed result for later use.",
       },
       guided: {
         title: "Scaffolded capstone",

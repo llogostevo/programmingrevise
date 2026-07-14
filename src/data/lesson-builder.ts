@@ -1,5 +1,7 @@
 import type { CodeLanguage, Exercise, Lesson, RequiredConstruct } from "@/types/course";
 
+type HintTriple = [string, string, string];
+
 type ExampleSeed = {
   title: string;
   context: string;
@@ -18,6 +20,8 @@ type CodeTaskSeed = {
   requiredConstructs?: RequiredConstruct[];
   restrictedPatterns?: string[];
   successMessage: string;
+  /** Optional full hint override. Otherwise hint 3 is generated from the target output / constructs. */
+  hints?: HintTriple;
 };
 
 export type LessonSeed = Omit<Lesson, "examples" | "exercises"> & {
@@ -28,6 +32,7 @@ export type LessonSeed = Omit<Lesson, "examples" | "exercises"> & {
     expectedOutput: string;
     instructions?: string;
     misconceptionFeedback?: Record<string, string>;
+    hints?: HintTriple;
   };
   debug: {
     language: CodeLanguage;
@@ -36,12 +41,16 @@ export type LessonSeed = Omit<Lesson, "examples" | "exercises"> & {
     expectedFix: string;
     acceptedFixes?: string[];
     feedback: string;
+    hints?: HintTriple;
   };
   complete: {
     language: CodeLanguage;
     instructions: string;
     codeParts: string[];
     answers: string[][];
+    /** Short teaching explanation shown after a correct fill. */
+    feedback: string;
+    hints?: HintTriple;
   };
   guided: CodeTaskSeed;
   independent: CodeTaskSeed;
@@ -51,6 +60,7 @@ export type LessonSeed = Omit<Lesson, "examples" | "exercises"> & {
     answer: number;
     correctFeedback: string;
     incorrectFeedback?: Record<string, string>;
+    hints?: HintTriple;
   };
   extraExercises?: Exercise[];
 };
@@ -58,17 +68,17 @@ export type LessonSeed = Omit<Lesson, "examples" | "exercises"> & {
 const defaultHints = {
   trace: [
     "Read one line at a time and keep an exact note of what is displayed.",
-    "Only include output created by a print instruction.",
+    "Only include output created by a print instruction — spelling and line breaks matter.",
     "Work through the values on paper, then copy the final output exactly.",
   ],
   fix: [
     "Decide whether the program cannot run or runs with the wrong result.",
-    "Compare the line with the syntax in the worked examples.",
+    "Compare the faulty line with the matching pattern in the worked examples.",
     "Replace only the faulty line; keep the program's intended result the same.",
   ],
   complete: [
-    "Say the missing line aloud in plain English first.",
-    "Look for the matching pattern in the examples above.",
+    "Say the missing piece aloud in plain English first.",
+    "Look for the matching keyword or operator in the examples above.",
     "Use the shape of the surrounding code to complete the missing part.",
   ],
   write: [
@@ -81,7 +91,60 @@ const defaultHints = {
     "Remove answers that describe a different programming concept.",
     "Use the exact OCR wording from the lesson's vocabulary section.",
   ],
-} satisfies Record<string, [string, string, string]>;
+} satisfies Record<string, HintTriple>;
+
+function compactOutput(output: string) {
+  return output.replace(/\r\n/g, "\n").replace(/\n/g, " ↵ ");
+}
+
+function compactCode(code: string) {
+  return code
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .join(" → ");
+}
+
+function fillAnswers(answers: string[][]) {
+  return answers
+    .map((options) => (options.length === 1 ? options[0] : options.map((option) => `\`${option}\``).join(" or ")))
+    .join("; then ");
+}
+
+function constructList(constructs: RequiredConstruct[] | undefined) {
+  if (!constructs?.length) return null;
+  return constructs.join(", ");
+}
+
+function withHint3(defaults: HintTriple, hint3: string, override?: HintTriple): HintTriple {
+  if (override) return override;
+  return [defaults[0], defaults[1], hint3];
+}
+
+function fixHint3(debug: LessonSeed["debug"]) {
+  const fix = compactCode(debug.expectedFix);
+  return `${debug.feedback} Corrected program shape: ${fix}.`;
+}
+
+function traceHint3(predict: LessonSeed["predict"]) {
+  return `Almost there — match this exact output (including spaces and line breaks): ${compactOutput(predict.expectedOutput)}.`;
+}
+
+function completeHint3(complete: LessonSeed["complete"]) {
+  return `Fill the blank(s) with: ${fillAnswers(complete.answers)}.`;
+}
+
+function writeHint3(task: CodeTaskSeed) {
+  const constructs = constructList(task.requiredConstructs);
+  const output = compactOutput(task.exampleOutput);
+  return constructs
+    ? `Your solution should use: ${constructs}. Aim for output like: ${output}.`
+    : `Aim for output like: ${output}. Keep the same structure as the starter comments.`;
+}
+
+function reviewHint3(review: LessonSeed["review"]) {
+  const choice = review.options[review.answer];
+  return `Choose: “${choice}”. ${review.correctFeedback}`;
+}
 
 export function buildLesson(seed: LessonSeed): Lesson {
   const id = seed.slug;
@@ -95,10 +158,13 @@ export function buildLesson(seed: LessonSeed): Lesson {
         stage: "trace",
         title: "Predict the output",
         instructions: seed.predict.instructions ?? "Give the exact output produced by this code.",
-        hints: defaultHints.trace,
+        hints: withHint3(defaultHints.trace, traceHint3(seed.predict), seed.predict.hints),
         knowledgeWeight: 0.8,
         applicationWeight: 0.2,
-        ...seed.predict,
+        language: seed.predict.language,
+        code: seed.predict.code,
+        expectedOutput: seed.predict.expectedOutput,
+        misconceptionFeedback: seed.predict.misconceptionFeedback,
       },
       {
         id: `${id}-debug`,
@@ -106,28 +172,36 @@ export function buildLesson(seed: LessonSeed): Lesson {
         stage: "fix",
         title: "Find and fix the error",
         instructions: "Identify the error type, then write the corrected code.",
-        hints: defaultHints.fix,
+        hints: withHint3(defaultHints.fix, fixHint3(seed.debug), seed.debug.hints),
         knowledgeWeight: 0.5,
         applicationWeight: 0.5,
-        ...seed.debug,
+        language: seed.debug.language,
+        code: seed.debug.code,
+        errorKind: seed.debug.errorKind,
+        expectedFix: seed.debug.expectedFix,
         acceptedFixes: seed.debug.acceptedFixes ?? [],
+        feedback: seed.debug.feedback,
       },
       {
         id: `${id}-complete`,
         exercise_type: "fill_blank",
         stage: "complete",
         title: "Complete the program",
-        hints: defaultHints.complete,
+        hints: withHint3(defaultHints.complete, completeHint3(seed.complete), seed.complete.hints),
         knowledgeWeight: 0.45,
         applicationWeight: 0.55,
-        ...seed.complete,
+        language: seed.complete.language,
+        instructions: seed.complete.instructions,
+        codeParts: seed.complete.codeParts,
+        answers: seed.complete.answers,
+        feedback: seed.complete.feedback,
       },
       {
         id: `${id}-guided`,
         exercise_type: "write_code",
         stage: "write",
         language: "python",
-        hints: defaultHints.write,
+        hints: withHint3(defaultHints.write, writeHint3(seed.guided), seed.guided.hints),
         knowledgeWeight: 0.35,
         applicationWeight: 0.65,
         starterCode: seed.guided.starterCode,
@@ -147,7 +221,7 @@ export function buildLesson(seed: LessonSeed): Lesson {
         exercise_type: "write_code",
         stage: "write",
         language: "python",
-        hints: defaultHints.write,
+        hints: withHint3(defaultHints.write, writeHint3(seed.independent), seed.independent.hints),
         knowledgeWeight: 0.2,
         applicationWeight: 0.8,
         starterCode: seed.independent.starterCode,
@@ -168,7 +242,7 @@ export function buildLesson(seed: LessonSeed): Lesson {
         stage: "review",
         title: "Retrieval check",
         instructions: seed.review.question,
-        hints: defaultHints.review,
+        hints: withHint3(defaultHints.review, reviewHint3(seed.review), seed.review.hints),
         knowledgeWeight: 1,
         applicationWeight: 0,
         options: seed.review.options,

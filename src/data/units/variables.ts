@@ -67,13 +67,19 @@ export const variablesUnit: CourseUnit = {
         errorKind: "syntax",
         expectedFix: 'favourite_team = "Lions"\nprint(favourite_team)',
         acceptedFixes: ['favouriteTeam = "Lions"\nprint(favouriteTeam)'],
-        feedback: "Variable names cannot contain spaces. Replace the space consistently with an underscore or use camelCase.",
+        feedback: "Variable names cannot contain spaces. Use either snake_case (favourite_team) or camelCase (favouriteTeam) in both the assignment and the print.",
+        hints: [
+          "Decide whether the program cannot run or runs with the wrong result.",
+          "Look at the variable name on the first line — spaces are not allowed in identifiers.",
+          "Use either snake_case (favourite_team) or camelCase (favouriteTeam) consistently in both lines.",
+        ],
       },
       complete: {
         language: "python",
         instructions: "Complete the assignment so the score variable stores 10.",
         codeParts: ["score ", " 10\nprint(score)"],
         answers: [["="]],
+        feedback: "`=` is the assignment operator: it stores the value on the right-hand side in the identifier on the left-hand side.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -157,6 +163,7 @@ export const variablesUnit: CourseUnit = {
         instructions: "Complete the update so lives increases by one.",
         codeParts: ["lives = 2\nlives = ", "\nprint(lives)"],
         answers: [["lives + 1"]],
+        feedback: "An update reads the current value, calculates a new result (here lives + 1), and assigns that result back into the same variable.",
       },
       guided: {
         title: "Scaffolded practice",

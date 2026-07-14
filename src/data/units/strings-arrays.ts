@@ -73,6 +73,7 @@ export const stringsArraysUnit: CourseUnit = {
         instructions: "Complete the OCR ERL operation that returns the uppercase string.",
         codeParts: ['code = "abCd1234"\nprint(code', ")"],
         answers: [[".upper"]],
+        feedback: "In OCR ERL, `.upper` returns an uppercase copy of the string (Python uses .upper()).",
       },
       guided: {
         title: "Scaffolded practice",
@@ -176,6 +177,7 @@ export const stringsArraysUnit: CourseUnit = {
         instructions: "Complete the ERL operation that extracts five characters starting at index 3.",
         codeParts: ['subject = "ComputerScience"\nprint(subject.', ")"],
         answers: [["substring(3,5)", "substring(3, 5)"]],
+        feedback: "ERL `substring(start, length)` takes length characters beginning at the start index — here five characters from index 3.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -278,6 +280,7 @@ export const stringsArraysUnit: CourseUnit = {
         instructions: "Complete the outer ERL function so the adjusted code is converted back to a character.",
         codeParts: ["letter = 'B'\nnextLetter = ", "(ASC(letter) + 1)\nprint(nextLetter)"],
         answers: [["CHR"]],
+        feedback: "CHR (Python chr) converts a numeric character code back into a character.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -382,6 +385,7 @@ export const stringsArraysUnit: CourseUnit = {
         instructions: "Complete the indexed assignment that stores Alice in the first array element.",
         codeParts: ["array names[5]\n", ' = "Alice"\nprint(names[0])'],
         answers: [["names[0]"]],
+        feedback: "Array indices start at 0, so `names[0]` is the first element.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -485,6 +489,7 @@ export const stringsArraysUnit: CourseUnit = {
         instructions: "Complete the inclusive upper bound so the traversal ends at the last valid index.",
         codeParts: ["for count=0 to ", "\n    print(scores[count])\nnext count"],
         answers: [["scores.length - 1", "scores.length-1"]],
+        feedback: "Because ERL `for ... to` is inclusive, the last valid index is length − 1.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -602,6 +607,7 @@ export const stringsArraysUnit: CourseUnit = {
         instructions: "Complete the indexed expression for the price field in column 3 of row i.",
         codeParts: ["total = total + float(", ")"],
         answers: [["events[i,3]", "events[i, 3]"]],
+        feedback: "In a 2D structure, `events[i, 3]` selects row i and column 3 (here the price field).",
       },
       guided: {
         title: "Scaffolded practice",

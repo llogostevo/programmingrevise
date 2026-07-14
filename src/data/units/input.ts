@@ -59,6 +59,7 @@ export const inputUnit: CourseUnit = {
         instructions: "Complete the line so the user's answer is stored in city.",
         codeParts: ["city = ", '\nprint(city)'],
         answers: [['input("Which city? ")', "input('Which city? ')", 'input("Which city?")', "input('Which city?')"]],
+        feedback: "`input(...)` reads the user's response as a string and the `=` stores that response in the city variable.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -143,6 +144,7 @@ export const inputUnit: CourseUnit = {
         instructions: "Complete the output so a stored name is joined to the greeting.",
         codeParts: ['name = input("Name: ")\nprint("Hi, " ', " name)"],
         answers: [["+"]],
+        feedback: "In OCR ERL, `+` joins (concatenates) two strings into one longer string for output.",
       },
       guided: {
         title: "Scaffolded practice",

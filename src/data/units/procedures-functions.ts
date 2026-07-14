@@ -75,6 +75,7 @@ export const proceduresFunctionsUnit: CourseUnit = {
         instructions: "Complete the keyword that closes the ERL procedure.",
         codeParts: ['procedure showMessage()\n    print("Keep going")\n', "\n\nshowMessage()"],
         answers: [["endprocedure"]],
+        feedback: "`endprocedure` closes an OCR ERL procedure definition.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -174,6 +175,7 @@ export const proceduresFunctionsUnit: CourseUnit = {
         instructions: "Complete the call by supplying the string value correctly.",
         codeParts: ['procedure cheer(team)\n    print("Go " + team)\nendprocedure\n\ncheer(', ")"],
         answers: [['"Falcons"']],
+        feedback: "A string argument in a call needs quotation marks so the procedure receives text, not an identifier name.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -277,6 +279,7 @@ export const proceduresFunctionsUnit: CourseUnit = {
         instructions: "Complete the keyword that sends the calculated value back to the caller.",
         codeParts: ["function triple(number)\n    answer = number * 3\n    ", " answer\nendfunction"],
         answers: [["return"]],
+        feedback: "`return` sends a calculated value back to the caller so it can be stored or used.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -408,6 +411,7 @@ export const proceduresFunctionsUnit: CourseUnit = {
         instructions: "Complete the keyword that declares score as a global variable.",
         codeParts: ["", " score = 0\n\nprocedure resetScore()\n    score = 0\nendprocedure"],
         answers: [["global"]],
+        feedback: "`global` declares that a variable belongs to the whole program, not just one subroutine.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -511,6 +515,7 @@ export const proceduresFunctionsUnit: CourseUnit = {
         instructions: "Complete the upper bound so every valid index is processed without going out of range.",
         codeParts: ["for index = 0 to scores.length ", "\n    print(scores[index])\nnext index"],
         answers: [["- 1", "-1"]],
+        feedback: "Looping `0 to length - 1` visits every valid zero-based index without going out of range.",
       },
       guided: {
         title: "Scaffolded practice",

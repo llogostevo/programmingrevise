@@ -372,7 +372,7 @@ export function LessonExperience({ unit, lesson }: { unit: CourseUnit; lesson: L
             Course
           </Link>
           <span>/</span>
-          <Link href={`/course/${unit.slug}`} className="hover:text-foreground">
+          <Link href={`/course/#unit-${unit.slug}`} className="hover:text-foreground">
             {unit.title}
           </Link>
           <span>/</span>

@@ -31,4 +31,4 @@ The app uses Next.js static export. `npm run build` copies the required Pyodide 
 - `src/lib/python-runner.ts` — browser Python execution and deterministic test checking
 - `src/lib/progress.ts` — versioned, safe localStorage persistence and review spacing
 
-There is no login, database or API route. Learner progress stays in the current browser unless it is exported as JSON from the dashboard.
+There is no login, database or API route. Learner progress stays in the current browser unless it is exported as JSON from the Progress menu.

@@ -134,7 +134,7 @@ export default function HomePage() {
               {availableUnits.map((unit) => (
                 <Link
                   key={unit.slug}
-                  href={`/course/${unit.slug}/`}
+                  href={`/course/#unit-${unit.slug}`}
                   className="group rounded-2xl border border-white/10 bg-white/5 p-5 transition-colors hover:bg-white/10"
                 >
                   <div className="flex items-center justify-between">

@@ -191,7 +191,7 @@ function FillBlankExercise(props: ExerciseProps<Extract<Exercise, { exercise_typ
       </div>
       <Button type="button" onClick={check} disabled={values.some((value) => !value.trim())}>Check blanks</Button>
       <HintControls hints={exercise.hints} used={hints} onUse={() => setHints((value) => Math.min(3, value + 1))} />
-      {submitted ? <SimpleFeedback correct={correct} partial={!correct && correctCells.some(Boolean)}>{correct ? "Correct. Every missing part fits the program." : "Check the highlighted blank. The surrounding code tells you the exact syntax needed."}</SimpleFeedback> : null}
+      {submitted ? <SimpleFeedback correct={correct} partial={!correct && correctCells.some(Boolean)}>{correct ? `Correct. ${exercise.feedback}` : "Check the highlighted blank. The surrounding code tells you the exact syntax needed."}</SimpleFeedback> : null}
     </ExerciseCard>
   );
 }

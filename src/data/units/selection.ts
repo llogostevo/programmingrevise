@@ -89,6 +89,7 @@ export const selectionUnit: CourseUnit = {
         instructions: "Complete the second comparison by repeating the variable being checked.",
         codeParts: ['room = "premium"\nvalidRoom = room == "basic" OR ', ' == "premium"\nprint(validRoom)'],
         answers: [["room"]],
+        feedback: "Each comparison needs the variable named on both sides when you chain OR / AND checks against different values.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -214,6 +215,7 @@ export const selectionUnit: CourseUnit = {
         instructions: "Complete the ERL keyword that introduces the second condition.",
         codeParts: ['if score >= 70 then\n    print("Distinction")\n', ' score >= 50 then\n    print("Merit")\nelse\n    print("Other")\nendif'],
         answers: [["elseif"]],
+        feedback: "OCR ERL uses the single keyword `elseif` for the next condition after `if` (Python uses `elif`).",
       },
       guided: {
         title: "Scaffolded practice",
@@ -325,6 +327,7 @@ export const selectionUnit: CourseUnit = {
         instructions: "Complete the bracketed part so either sensor may activate while the system is armed.",
         codeParts: ["if systemArmed AND ", ' then\n    print("Alarm")\nelse\n    print("Safe")\nendif'],
         answers: [["(doorActive OR windowActive)"]],
+        feedback: "Brackets group the OR so both sensors are controlled by the armed check; without them AND would bind first.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -431,6 +434,7 @@ export const selectionUnit: CourseUnit = {
         instructions: "Complete the OCR ERL keyword that closes the switch structure.",
         codeParts: ['switch choice :\n    case 1:\n        print("Play")\n    default:\n        print("Invalid")\n', ""],
         answers: [["endswitch"]],
+        feedback: "`endswitch` closes an OCR ERL switch/case structure, like `endif` closes an if.",
       },
       guided: {
         title: "Scaffolded practice",

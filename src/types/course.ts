@@ -56,6 +56,7 @@ export const exerciseSchema = z.discriminatedUnion("exercise_type", [
     language: languageSchema,
     codeParts: z.array(z.string()).min(2),
     answers: z.array(z.array(z.string()).min(1)).min(1),
+    feedback: z.string().min(1),
   }),
   exerciseBaseSchema.extend({
     exercise_type: z.literal("debug_code"),

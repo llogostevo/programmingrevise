@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowRight,
+  ArrowDown,
   Check,
   ChevronRight,
   Circle,
@@ -15,7 +15,7 @@ import {
 
 import { curriculum, availableLessons } from "@/data/curriculum";
 import { useProgress } from "@/hooks/use-progress";
-import { getContinueHref, getNextLesson, getNextUnpassedTask, getTaskPassState, writeCodeTasks, type TaskPassState } from "@/lib/continue";
+import { getNextLesson, getTaskPassState, writeCodeTasks, type TaskPassState } from "@/lib/continue";
 import { isReviewDue, setOrderedLessons } from "@/lib/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,15 +47,43 @@ function TaskBadge({ label, state }: { label: "Guided write" | "Own write"; stat
   return <Badge variant="muted">{label}</Badge>;
 }
 
+function lessonRowId(unitSlug: string, lessonSlug: string) {
+  return `lesson-row-${unitSlug}--${lessonSlug}`;
+}
+
 export function CourseMap() {
   const progress = useProgress();
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
+  const highlightTimer = useRef<number>(undefined);
   const completedCount = availableLessons.filter(({ unit, lesson }) => progress.lessons[`${unit.slug}/${lesson.slug}`]?.completedAt).length;
   const next = getNextLesson(progress);
   const nextProgress = next ? progress.lessons[`${next.unit.slug}/${next.lesson.slug}`] : undefined;
-  const continueHref = getContinueHref(progress);
-  const nextTask = getNextUnpassedTask(progress);
   const reviewDue = progress.reviewQueue.filter(isReviewDue).length;
+
+  function scrollToNextLesson() {
+    if (!next) return;
+    const key = `${next.unit.slug}/${next.lesson.slug}`;
+    const row = document.getElementById(lessonRowId(next.unit.slug, next.lesson.slug));
+    if (!row) return;
+
+    window.clearTimeout(highlightTimer.current);
+    setHighlightedKey(null);
+
+    let started = false;
+    const startHighlight = () => {
+      if (started) return;
+      started = true;
+      window.removeEventListener("scrollend", startHighlight);
+      setHighlightedKey(key);
+      highlightTimer.current = window.setTimeout(() => setHighlightedKey(null), 2400);
+    };
+    // "scrollend" fires when the smooth scroll settles; the timeout covers
+    // browsers without it and the case where no scrolling is needed.
+    window.addEventListener("scrollend", startHighlight, { once: true });
+    window.setTimeout(startHighlight, 1200);
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 
   return (
     <div className="mx-auto max-w-[1250px] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
@@ -115,19 +143,10 @@ export function CourseMap() {
                 </div>
                 <Progress value={((nextProgress?.completedSteps.length ?? 0) / 7) * 100} />
               </div>
-              <div className="flex flex-wrap gap-2">
-                {nextTask ? (
-                  <Button asChild size="lg" variant="outline">
-                    <Link href={nextTask.href}>Practice next task</Link>
-                  </Button>
-                ) : null}
-                <Button asChild size="lg">
-                  <Link href={continueHref}>
-                    {nextProgress ? "Continue lesson" : "Start lesson"}
-                    <ArrowRight />
-                  </Link>
-                </Button>
-              </div>
+              <Button type="button" size="lg" onClick={scrollToNextLesson}>
+                Go to next lesson
+                <ArrowDown />
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -144,7 +163,7 @@ export function CourseMap() {
         {curriculum.map((unit) => {
           const available = unit.status === "available";
           return (
-            <section key={unit.slug} className="relative grid grid-cols-[3rem_1fr] gap-3 sm:grid-cols-[5rem_1fr] sm:gap-5">
+            <section key={unit.slug} id={`unit-${unit.slug}`} className="relative grid scroll-mt-24 grid-cols-[3rem_1fr] gap-3 sm:grid-cols-[5rem_1fr] sm:gap-5">
               <div
                 className={cn(
                   "relative z-10 grid size-12 place-items-center rounded-2xl border-4 border-background font-mono text-sm font-bold shadow-sm sm:ml-4",
@@ -168,13 +187,6 @@ export function CourseMap() {
                       </div>
                       <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{unit.description}</p>
                     </div>
-                    {available ? (
-                      <Button asChild variant="ghost" size="sm">
-                        <Link href={`/course/${unit.slug}/`}>
-                          Unit overview <ArrowRight />
-                        </Link>
-                      </Button>
-                    ) : null}
                   </div>
                   {available ? (
                     <div className="mt-5 grid gap-2">
@@ -218,14 +230,18 @@ export function CourseMap() {
                           </>
                         );
                         return locked ? (
-                          <div key={lesson.slug} className="flex items-center gap-3 rounded-xl border bg-muted/35 p-3 opacity-65">
+                          <div key={lesson.slug} id={lessonRowId(unit.slug, lesson.slug)} className="flex items-center gap-3 rounded-xl border bg-muted/35 p-3 opacity-65">
                             {content}
                           </div>
                         ) : (
                           <Link
                             key={lesson.slug}
+                            id={lessonRowId(unit.slug, lesson.slug)}
                             href={`/course/${unit.slug}/${lesson.slug}/`}
-                            className="flex items-center gap-3 rounded-xl border p-3 transition-colors hover:border-primary/35 hover:bg-secondary/45"
+                            className={cn(
+                              "flex items-center gap-3 rounded-xl border p-3 transition-colors hover:border-primary/35 hover:bg-secondary/45",
+                              highlightedKey === `${unit.slug}/${lesson.slug}` && "lesson-row-pulse",
+                            )}
                           >
                             {content}
                           </Link>

@@ -75,6 +75,7 @@ export const dataTypesUnit: CourseUnit = {
         instructions: "Complete the assignment with a suitable value for a phone number.",
         codeParts: ["phoneNumber = ", "\nprint(phoneNumber)"],
         answers: [['"07123456789"', "'07123456789'"]],
+        feedback: "A phone number is text, so it needs quotation marks; that preserves a leading zero which a number would drop.",
       },
       guided: {
         title: "Scaffolded practice",
@@ -167,6 +168,7 @@ export const dataTypesUnit: CourseUnit = {
         instructions: "Complete the cast so whole-number input can be used in a calculation.",
         codeParts: ['age = ', '(input("Age: "))\nprint(age + 1)'],
         answers: [["int"]],
+        feedback: "`int(...)` casts suitable digit text from input into a whole number so it can be used in arithmetic.",
       },
       guided: {
         title: "Scaffolded practice",
