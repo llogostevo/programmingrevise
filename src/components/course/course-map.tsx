@@ -20,7 +20,6 @@ import { isReviewDue, setOrderedLessons } from "@/lib/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 const accents = {
@@ -87,79 +86,51 @@ export function CourseMap() {
 
   return (
     <div className="mx-auto max-w-[1250px] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
         <div>
-          <Badge variant="info">
-            <Map className="size-3" /> Learn
-          </Badge>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Your next step</h1>
-          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            {completedCount}/{availableLessons.length} lessons complete
+          <h1 className="flex items-center gap-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <Map className="size-7 text-primary sm:size-8" aria-hidden />
+            Learn
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {completedCount}/{availableLessons.length} lessons
             {reviewDue > 0 ? ` · ${reviewDue} review${reviewDue === 1 ? "" : "s"} ready` : ""}
+            <span className="text-muted-foreground/80"> · Guided write = supported · Own write = on your own</span>
           </p>
         </div>
-        <div className="relative">
-          <Button type="button" variant="ghost" size="sm" onClick={() => setOptionsOpen((value) => !value)} aria-expanded={optionsOpen}>
-            <Settings2 className="size-4" /> Options
-          </Button>
-          {optionsOpen ? (
-            <div className="absolute right-0 z-20 mt-2 w-72 rounded-xl border bg-card p-4 shadow-lg">
-              <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
-                <span>
-                  <span className="flex items-center gap-2 font-medium">Complete in order</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">Turn off for free navigation</span>
-                </span>
-                <input
-                  type="checkbox"
-                  className="peer sr-only"
-                  checked={progress.settings.orderedLessons}
-                  onChange={(event) => setOrderedLessons(event.target.checked)}
-                />
-                <span className="relative h-6 w-11 shrink-0 rounded-full bg-muted transition-colors after:absolute after:left-1 after:top-1 after:size-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-primary peer-checked:after:translate-x-5" />
-              </label>
-            </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {next ? (
+            <Button type="button" onClick={scrollToNextLesson}>
+              {nextProgress ? "Continue" : "Find next lesson"}
+              <ArrowDown />
+            </Button>
           ) : null}
-        </div>
-      </div>
-
-      {next ? (
-        <Card className="mt-6 overflow-hidden">
-          <div className="code-grid border-b bg-slate-900 p-5 text-white sm:p-8">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <Badge className="bg-white/10 text-teal-200">Up next · Unit {next.unit.number}</Badge>
-                <h2 className="mt-4 text-2xl font-semibold sm:text-4xl">{next.lesson.title}</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">{next.lesson.shortDescription}</p>
+          <div className="relative">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setOptionsOpen((value) => !value)} aria-expanded={optionsOpen}>
+              <Settings2 className="size-4" /> Options
+            </Button>
+            {optionsOpen ? (
+              <div className="absolute right-0 z-20 mt-2 w-72 rounded-xl border bg-card p-4 shadow-lg">
+                <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
+                  <span>
+                    <span className="flex items-center gap-2 font-medium">Complete in order</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">Turn off for free navigation</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    className="peer sr-only"
+                    checked={progress.settings.orderedLessons}
+                    onChange={(event) => setOrderedLessons(event.target.checked)}
+                  />
+                  <span className="relative h-6 w-11 shrink-0 rounded-full bg-muted transition-colors after:absolute after:left-1 after:top-1 after:size-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-primary peer-checked:after:translate-x-5" />
+                </label>
               </div>
-              <span className="font-mono text-xs text-slate-400">J277 {next.lesson.specReference}</span>
-            </div>
+            ) : null}
           </div>
-          <CardContent className="pt-5 sm:pt-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="min-w-56 flex-1">
-                <div className="mb-2 flex justify-between text-xs font-medium text-muted-foreground">
-                  <span>{nextProgress ? "Lesson in progress" : "Ready to begin"}</span>
-                  <span>{nextProgress?.completedSteps.length ?? 0} / 7 steps</span>
-                </div>
-                <Progress value={((nextProgress?.completedSteps.length ?? 0) / 7) * 100} />
-              </div>
-              <Button type="button" size="lg" onClick={scrollToNextLesson}>
-                Go to next lesson
-                <ArrowDown />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <div className="mt-10 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Full curriculum</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Guided write = supported task · Own write = on your own</p>
         </div>
       </div>
 
-      <div className="relative mt-5 space-y-5 before:absolute before:bottom-8 before:left-[1.45rem] before:top-8 before:w-px before:bg-border sm:before:left-[2.45rem]">
+      <div className="relative mt-8 space-y-5 before:absolute before:bottom-8 before:left-[1.45rem] before:top-8 before:w-px before:bg-border sm:before:left-[2.45rem]">
         {curriculum.map((unit) => {
           const available = unit.status === "available";
           return (

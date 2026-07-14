@@ -10,7 +10,7 @@ import { isReviewDue } from "@/lib/progress";
 import { ExerciseRenderer } from "@/components/course/exercise-renderer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 
 const exerciseMap = new Map(
   availableLessons.flatMap(({ unit, lesson }) => lesson.exercises.map((exercise) => [exercise.id, { unit, lesson, exercise }] as const)),
@@ -67,28 +67,28 @@ export function ReviewView() {
           )}
         </div>
       ) : (
-        <Card className="mt-8">
-          <CardContent className="py-12 text-center">
-            <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-success-soft text-success">
-              <CheckCircle2 className="size-6" />
+        <Card className="mt-6 p-6 sm:p-7">
+          <div className="flex flex-col items-center text-center">
+            <span className="grid size-10 place-items-center rounded-xl bg-success-soft text-success">
+              <CheckCircle2 className="size-5" />
             </span>
-            <h2 className="mt-4 text-xl font-semibold">Nothing due — your memory queue is clear</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+            <h2 className="mt-3 text-lg font-semibold">Nothing due — your memory queue is clear</h2>
+            <p className="mx-auto mt-1.5 max-w-md text-sm leading-6 text-muted-foreground">
               Keep learning and these short checks will return later to protect your exam memory.
             </p>
-            <Button asChild className="mt-5">
+            <Button asChild size="sm" className="mt-4">
               <Link href="/course/">Choose a lesson</Link>
             </Button>
-          </CardContent>
+          </div>
         </Card>
       )}
       {scheduled.length ? (
-        <div className="mt-8 rounded-2xl border bg-card p-5">
+        <div className="mt-4 rounded-2xl border bg-card px-5 py-4">
           <div className="flex items-center gap-2">
             <CalendarClock className="size-4 text-primary" />
-            <h2 className="font-semibold">Coming up</h2>
+            <h2 className="text-sm font-semibold">Coming up</h2>
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-1.5 text-sm text-muted-foreground">
             {scheduled.length} question{scheduled.length === 1 ? " is" : "s are"} scheduled. Next review:{" "}
             {new Date(scheduled[0].dueAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.
           </p>

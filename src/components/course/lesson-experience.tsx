@@ -108,26 +108,27 @@ function StepButton({
       disabled={locked}
       onClick={onClick}
       className={cn(
-        "group relative flex min-w-[5.5rem] flex-col items-center gap-1.5 rounded-xl px-2 py-2.5 text-xs font-semibold transition-all",
-        active && "bg-slate-900 text-white shadow-md ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
-        !active && complete && "text-success hover:bg-success-soft/60",
-        !active && !complete && !locked && "text-muted-foreground hover:bg-muted hover:text-foreground",
+        "group relative flex min-w-[4.5rem] flex-col items-center gap-1 px-1 py-1 text-[11px] font-semibold transition-colors sm:min-w-[5rem] sm:text-xs",
+        active && "text-primary",
+        !active && complete && "text-success hover:text-success",
+        !active && !complete && !locked && "text-muted-foreground hover:text-foreground",
         locked && "cursor-not-allowed text-muted-foreground/40 opacity-55",
       )}
     >
       <span
         className={cn(
-          "grid size-8 place-items-center rounded-full border",
-          active && "border-white/30 bg-white/15",
-          !active && complete && "border-emerald-500 bg-success-soft text-success",
-          !active && !complete && !locked && "border-slate-300 bg-card",
-          locked && "border-slate-200 bg-muted",
+          "grid size-7 place-items-center rounded-full border sm:size-8",
+          active && "border-primary bg-primary text-primary-foreground shadow-sm",
+          !active && complete && "border-emerald-500/70 bg-success-soft text-success",
+          !active && !complete && !locked && "border-border bg-card",
+          locked && "border-border bg-muted",
         )}
         aria-hidden
       >
-        {locked ? <LockKeyhole className="size-3.5" /> : complete ? <Check className="size-3.5" /> : <Icon className="size-3.5" />}
+        {locked ? <LockKeyhole className="size-3.5" /> : complete && !active ? <Check className="size-3.5" /> : <Icon className="size-3.5" />}
       </span>
-      <span className={cn(active && "text-[13px]")}>{meta.label}</span>
+      <span className={cn("leading-none", active && "font-bold")}>{meta.label}</span>
+      {active ? <span className="mt-0.5 h-0.5 w-5 rounded-full bg-primary" aria-hidden /> : <span className="mt-0.5 h-0.5 w-5" aria-hidden />}
       {active ? <span className="sr-only">Current step</span> : null}
       {complete && !active ? <span className="sr-only">Completed</span> : null}
       {locked ? <span className="sr-only">Locked</span> : null}
@@ -389,8 +390,8 @@ export function LessonExperience({ unit, lesson }: { unit: CourseUnit; lesson: L
           <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{lesson.title}</h1>
         </div>
         <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0 flex-1 overflow-x-auto pb-1" role="tablist" aria-label="Lesson steps" onKeyDown={onTabKeyDown}>
-            <div className="flex min-w-max gap-1">
+          <div className="min-w-0 flex-1 overflow-x-auto pb-1.5" role="tablist" aria-label="Lesson steps" onKeyDown={onTabKeyDown}>
+            <div className="flex min-w-max gap-0.5">
               {LESSON_STEPS.map((step) => (
                 <StepButton
                   key={step}
